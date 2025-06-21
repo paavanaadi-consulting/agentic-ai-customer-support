@@ -1,6 +1,6 @@
-# Genetic AI Customer Support System
+# Agentic AI Customer Support System
 
-A sophisticated multi-agent AI system that evolves and adapts to provide better customer service through genetic algorithms and advanced database integration.
+A sophisticated multi-agent AI system that evolves and adapts to provide better customer service through agentic workflows, genetic algorithms, and advanced database integration.
 
 ## 🚀 Features
 
@@ -41,8 +41,8 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 ### Quick Start
 
 ```bash
-git clone https://github.com/yourusername/genetic-ai-customer-support.git
-cd genetic-ai-customer-support
+git clone https://github.com/yourusername/agentic-ai-customer-support.git
+cd agentic-ai-customer-support
 pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your configuration
@@ -53,8 +53,8 @@ python main.py
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/genetic-ai-customer-support.git
-   cd genetic-ai-customer-support
+   git clone https://github.com/yourusername/agentic-ai-customer-support.git
+   cd agentic-ai-customer-support
    ```
 
 2. **Create virtual environment**
@@ -202,7 +202,7 @@ curl -X POST http://localhost:8000/api/query \
 ### Project Structure
 
 ```
-genetic-ai-customer-support/
+agentic-ai-customer-support/
 ├── main.py
 ├── config/
 │   ├── env_settings.py  # Unified, environment-specific config
@@ -581,30 +581,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/genetic-ai-customer-support/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/genetic-ai-customer-support/discussions)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/agentic-ai-customer-support/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/agentic-ai-customer-support/discussions)
 - **Email**: support@yourcompany.com
-
-## 🗺 Roadmap
-
-### Version 1.1
-- [ ] Advanced fitness functions
-- [ ] Multi-objective optimization
-- [ ] Custom agent plugins
-- [ ] Enhanced monitoring dashboard
-
-### Version 1.2
-- [ ] Distributed processing
-- [ ] Advanced ML integration
-- [ ] Real-time adaptation
-- [ ] Customer feedback loops
-
-### Version 2.0
-- [ ] Neural architecture search
-- [ ] AutoML integration
-- [ ] Advanced NLP capabilities
-- [ ] Predictive analytics
 
 ---
 
-**Made with ❤️ by the Genetic AI Team**
+**Made with ❤️ by the Agentic AI Team**

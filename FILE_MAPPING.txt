@@ -1,4 +1,3 @@
-
 FILE MAPPING REFERENCE:
 =====================
 
@@ -47,3 +46,5 @@ From Claude's artifacts, copy the content to these files:
 └── middleware.py
 
 All the code content is available in Claude's artifacts above!
+
+# If any paths or references use 'agentic-ai-customer-support', update to 'agentic-ai-customer-support'

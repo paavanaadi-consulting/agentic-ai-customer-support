@@ -49,7 +49,7 @@ def create_enhanced_app() -> FastAPI:
     
     @app.get("/")
     async def root():
-        return {"message": "Enhanced Genetic AI Customer Support System", "version": "2.0.0"}
+        return {"message": "Enhanced Agentic AI Customer Support System", "version": "2.0.0"}
     
     @app.get("/health")
     async def health_check():

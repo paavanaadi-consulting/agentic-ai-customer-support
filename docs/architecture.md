@@ -1,6 +1,6 @@
 # System Architecture
 
-The Genetic AI Customer Support System is a modular, multi-agent platform designed for scalable, intelligent customer support.
+The Agentic AI Customer Support System is a modular, multi-agent platform designed for scalable, intelligent customer support.
 
 ## Main Components
 - **API Layer**: Exposes endpoints for client interaction.

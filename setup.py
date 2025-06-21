@@ -4,14 +4,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="genetic-ai-customer-support",
+    name="agentic-ai-customer-support",
     version="1.0.0",
     author="Your Name",
     author_email="your.email@example.com",
     description="A genetic AI system for customer support using multiple AI agents",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/genetic-ai-customer-support",
+    url="https://github.com/yourusername/agentic-ai-customer-support",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",

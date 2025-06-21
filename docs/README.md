@@ -1,4 +1,4 @@
-# Documentation for Genetic AI Customer Support System
+# Documentation for Agentic AI Customer Support System
 
 This folder contains documentation and guides for the project.
 
