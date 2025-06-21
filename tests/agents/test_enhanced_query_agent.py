@@ -14,6 +14,8 @@ class DummyDB:
     async def get_related_articles(self, query):
         return ['article1', 'article2']
 
+# DEPRECATED: This test is for the legacy EnhancedQueryAgent and is no longer maintained.
+# Please use tests in tests/a2a_protocol/ for A2A-enabled agents.
 @pytest.mark.asyncio
 async def test_process_input_enhanced(monkeypatch):
     agent = EnhancedQueryAgent(api_key='dummy', db_connector=DummyDB())

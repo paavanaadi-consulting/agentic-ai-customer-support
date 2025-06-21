@@ -56,3 +56,8 @@ class QueryAgent(BaseAgent):
         Set the chromosome for this agent (used by the genetic algorithm).
         """
         self.chromosome = chromosome
+
+# This agent is now deprecated in favor of A2A-enabled agents.
+# Please use the agents in a2a_protocol/ for all new development.
+
+# (File intentionally left minimal for backward compatibility)

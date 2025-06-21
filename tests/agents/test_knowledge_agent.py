@@ -8,6 +8,8 @@ class DummyKnowledgeSource:
         self.called = True
         return {"info": "dummy knowledge"}
 
+# DEPRECATED: This test is for the legacy KnowledgeAgent and is no longer maintained.
+# Please use tests in tests/a2a_protocol/ for A2A-enabled agents.
 @pytest.mark.asyncio
 async def test_process_input(monkeypatch):
     agent = KnowledgeAgent(api_key="dummy")

@@ -1,19 +1,60 @@
+# ⚡️ A2A Protocol Migration Notice
+
+**This project now uses an Agent-to-Agent (A2A) protocol for all agent communication.**
+
+- All new development must use the agents in `a2a_protocol/`.
+- Legacy agents in `agents/` are deprecated and remain as stubs for backward compatibility.
+- See `examples/a2a_usage_example.py` for usage of the new A2A system.
+
+---
+
 # Agentic AI Customer Support System
 
 A sophisticated multi-agent AI system that evolves and adapts to provide better customer service through agentic workflows, genetic algorithms, and advanced database integration.
 
 ## 🚀 Features
 
+- **A2A Protocol**: Modular agents communicate directly via WebSockets for scalable, decoupled orchestration
 - **Multi-Agent Architecture**: Modular agents (Claude, Gemini, GPT) with database context
 - **Genetic Algorithm Evolution**: Agents evolve strategies for better performance
 - **Multiple Data Sources**: RDBMS, PDF documents, Vector DB, Kafka streams
 - **MCP Server Integration**: Extensible server communication protocol
 - **Full Database Integration**: Postgres schema for tickets, users, knowledge base, and analytics
-- **Unified Environment Config**: All settings via `config/env_settings.py` and `.env`
+- **Unified Environment Config**: All settings via `config/settings.py` and `.env`
 - **Real-time Processing**: Asynchronous processing of customer queries
 - **Performance Monitoring**: Built-in metrics, fitness evaluation, and health checks
 - **Enhanced Dashboard**: Customer and agent analytics, satisfaction trends, database health
 - **Extensible Scripts**: For DB initialization, seeding, import/export, health checks, and more
+
+---
+
+# 🆕 A2A Agent Usage Example
+
+See `examples/a2a_usage_example.py` for a full example. Basic usage:
+
+```python
+from a2a_protocol.a2a_query_agent import A2AQueryAgent
+from a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
+from a2a_protocol.a2a_response_agent import A2AResponseAgent
+from a2a_protocol.a2a_coordinator import A2ACoordinator
+
+# Initialize agents
+query_agent = A2AQueryAgent()
+knowledge_agent = A2AKnowledgeAgent()
+response_agent = A2AResponseAgent()
+coordinator = A2ACoordinator()
+
+# Example: process a query via the coordinator
+import asyncio
+async def run_workflow():
+    workflow_data = {"task_type": "customer_support_workflow", "query_data": {"query": "How do I upgrade?", "customer_id": "12345"}}
+    result = await coordinator.process_task(workflow_data)
+    print(result)
+
+asyncio.run(run_workflow())
+```
+
+---
 
 ## 📋 Table of Contents
 

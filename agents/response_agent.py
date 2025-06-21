@@ -1,5 +1,8 @@
 """
 ResponseAgent: Handles response generation and formatting.
+
+DEPRECATED: This agent is deprecated in favor of A2A-enabled agents.
+Please use the agents in a2a_protocol/ for all new development.
 """
 from .base_agent import BaseAgent
 

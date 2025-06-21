@@ -1,6 +1,9 @@
 import pytest
 from agents.response_agent import ResponseAgent
 
+# DEPRECATED: This test is for the legacy ResponseAgent and is no longer maintained.
+# Please use tests in tests/a2a_protocol/ for A2A-enabled agents.
+
 @pytest.mark.asyncio
 async def test_process_input(monkeypatch):
     agent = ResponseAgent(api_key="dummy")
