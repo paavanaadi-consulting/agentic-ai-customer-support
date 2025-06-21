@@ -47,21 +47,24 @@ class A2AQueryAgent(A2AAgent):
             'assess_urgency',
             'language_detection'
         ]
-    def _build_prompt(self, query: str, capability: str) -> str:
+    def _build_prompt(self, query: str, capability: str, context: dict = None, mcp_clients: dict = None) -> str:
+        context_str = f"\nContext: {context}" if context else ""
+        mcp_str = f"\nMCP: {mcp_clients}" if mcp_clients else ""
         if capability == 'analyze_query':
-            return f"""You are an AI assistant. Analyze the following customer query and provide a structured analysis including intent, entities, sentiment, urgency, and language:\n\nQuery: {query}\n"""
+            return f"""You are an AI assistant. Analyze the following customer query and provide a structured analysis including intent, entities, sentiment, urgency, and language:{context_str}{mcp_str}\n\nQuery: {query}\n"""
         elif capability == 'classify_intent':
-            return f"Classify the intent of this customer query: {query}"
+            return f"Classify the intent of this customer query: {query}{context_str}{mcp_str}"
         elif capability == 'extract_entities':
-            return f"Extract all relevant entities from this query: {query}"
+            return f"Extract all relevant entities from this query: {query}{context_str}{mcp_str}"
         elif capability == 'detect_sentiment':
-            return f"Detect the sentiment (positive, negative, neutral) of this query: {query}"
+            return f"Detect the sentiment (positive, negative, neutral) of this query: {query}{context_str}{mcp_str}"
         elif capability == 'assess_urgency':
-            return f"Assess the urgency level (low, medium, high) of this query: {query}"
+            return f"Assess the urgency level (low, medium, high) of this query: {query}{context_str}{mcp_str}"
         elif capability == 'language_detection':
-            return f"Detect the language of this query: {query}"
+            return f"Detect the language of this query: {query}{context_str}{mcp_str}"
         else:
-            return query
+            return f"{query}{context_str}{mcp_str}"
+
     async def process_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         task_type = task_data.get('task_type')
         if task_type == 'analyze_query':
@@ -71,6 +74,8 @@ class A2AQueryAgent(A2AAgent):
     async def _process_query_analysis(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         start_time = time.time()
         query = task_data.get('input_data', {}).get('query', '')
+        context = task_data.get('input_data', {}).get('context', {})
+        mcp_clients = task_data.get('mcp_clients', self.mcp_clients)
         capability = task_data.get('capability', 'analyze_query')
         llm_provider = task_data.get('llm_provider', self.llm_provider)
         llm_model = task_data.get('llm_model', self.llm_model)
@@ -83,7 +88,7 @@ class A2AQueryAgent(A2AAgent):
         if not query:
             return {'success': False, 'error': 'No query provided', 'a2a_processed': True, 'agent_id': self.agent_id}
         try:
-            prompt = self._build_prompt(query, capability)
+            prompt = self._build_prompt(query, capability, context, mcp_clients)
             response = await self._call_llm(prompt, llm_provider, llm_model)
             result = {
                 'analysis': response,

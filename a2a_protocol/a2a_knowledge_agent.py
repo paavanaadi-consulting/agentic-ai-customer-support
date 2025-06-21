@@ -28,24 +28,23 @@ class A2AKnowledgeAgent(A2AAgent):
             'source_validation',
             'content_summarization'
         ]
-    def _build_prompt(self, query: str, capability: str) -> str:
+    def _build_prompt(self, query: str, capability: str, context: dict = None, mcp_clients: dict = None) -> str:
+        context_str = f"\nContext: {context}" if context else ""
+        mcp_str = f"\nMCP: {mcp_clients}" if mcp_clients else ""
         if capability == 'knowledge_search':
-            return f"""You are an expert knowledge retrieval agent. Search your knowledge base and provide a concise, factual answer to the following query:
-
-Query: {query}
-"""
+            return f"""You are an expert knowledge retrieval agent. Search your knowledge base and provide a concise, factual answer to the following query:{context_str}{mcp_str}\n\nQuery: {query}\n"""
         elif capability == 'synthesize_info':
-            return f"Synthesize information from multiple sources for this query: {query}"
+            return f"Synthesize information from multiple sources for this query: {query}{context_str}{mcp_str}"
         elif capability == 'find_articles':
-            return f"Find relevant articles for this query: {query}"
+            return f"Find relevant articles for this query: {query}{context_str}{mcp_str}"
         elif capability == 'fact_checking':
-            return f"Fact-check the following statement or query: {query}"
+            return f"Fact-check the following statement or query: {query}{context_str}{mcp_str}"
         elif capability == 'source_validation':
-            return f"Validate the sources for this information: {query}"
+            return f"Validate the sources for this information: {query}{context_str}{mcp_str}"
         elif capability == 'content_summarization':
-            return f"Summarize the following content or query: {query}"
+            return f"Summarize the following content or query: {query}{context_str}{mcp_str}"
         else:
-            return query
+            return f"{query}{context_str}{mcp_str}"
     async def process_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         task_type = task_data.get('task_type')
         if task_type == 'knowledge_search':
@@ -59,11 +58,13 @@ Query: {query}
     async def _process_knowledge_search(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         start_time = time.time()
         query = task_data.get('input_data', {}).get('query', '')
+        context = task_data.get('input_data', {}).get('context', {})
+        mcp_clients = task_data.get('mcp_clients', self.mcp_clients)
         capability = task_data.get('capability', 'knowledge_search')
         if not query:
             return {'success': False, 'error': 'No query provided', 'a2a_processed': True, 'agent_id': self.agent_id}
         try:
-            prompt = self._build_prompt(query, capability)
+            prompt = self._build_prompt(query, capability, context, mcp_clients)
             response = await call_chatgpt(prompt)
             result = {
                 'knowledge': response,

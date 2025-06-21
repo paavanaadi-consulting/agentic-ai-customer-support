@@ -1,12 +1,3 @@
-# ⚡️ A2A Protocol Migration Notice
-
-**This project now uses an Agent-to-Agent (A2A) protocol for all agent communication.**
-
-- All new development must use the agents in `a2a_protocol/`.
-- Legacy agents in `agents/` are deprecated and remain as stubs for backward compatibility.
-- See `examples/a2a_usage_example.py` for usage of the new A2A system.
-
----
 
 # Agentic AI Customer Support System
 
@@ -34,8 +25,7 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 - **All agents now support dynamic LLM selection (OpenAI, Gemini, Claude) for all LLM operations.**
 - **Prompt templates are used for each agent capability (intent, knowledge, response, etc).**
 - **All A2A agents accept `mcp_clients` for context-aware LLM prompting (Postgres, Kafka, AWS, etc).**
-- **Legacy agents are fully deprecated; only use `a2a_protocol/` agents.**
-- **See `examples/a2a_usage_example.py` for modern usage.**
+
 
 ---
 

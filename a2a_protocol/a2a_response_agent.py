@@ -48,21 +48,24 @@ class A2AResponseAgent(A2AAgent):
             'tone_adjustment',
             'multi_language_response'
         ]
-    def _build_prompt(self, query: str, capability: str) -> str:
+    def _build_prompt(self, query: str, capability: str, context: dict = None, mcp_clients: dict = None) -> str:
+        context_str = f"\nContext: {context}" if context else ""
+        mcp_str = f"\nMCP: {mcp_clients}" if mcp_clients else ""
         if capability == 'generate_response':
-            return f"""You are a customer support agent. Generate a helpful, accurate, and empathetic response to the following query:\n\nQuery: {query}\n"""
+            return f"""You are a customer support agent. Generate a helpful, accurate, and empathetic response to the following query:{context_str}{mcp_str}\n\nQuery: {query}\n"""
         elif capability == 'craft_email':
-            return f"Craft a professional customer support email for this query: {query}"
+            return f"Craft a professional customer support email for this query: {query}{context_str}{mcp_str}"
         elif capability == 'create_ticket_response':
-            return f"Create a ticket response for this query: {query}"
+            return f"Create a ticket response for this query: {query}{context_str}{mcp_str}"
         elif capability == 'personalize_content':
-            return f"Personalize the following content for the customer: {query}"
+            return f"Personalize the following content for the customer: {query}{context_str}{mcp_str}"
         elif capability == 'tone_adjustment':
-            return f"Adjust the tone of this response as requested: {query}"
+            return f"Adjust the tone of this response as requested: {query}{context_str}{mcp_str}"
         elif capability == 'multi_language_response':
-            return f"Translate the following response into the customer's language: {query}"
+            return f"Translate the following response into the customer's language: {query}{context_str}{mcp_str}"
         else:
-            return query
+            return f"{query}{context_str}{mcp_str}"
+
     async def process_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         task_type = task_data.get('task_type')
         if task_type == 'generate_response':
@@ -72,6 +75,8 @@ class A2AResponseAgent(A2AAgent):
     async def _process_response_generation(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         start_time = time.time()
         query = task_data.get('query_analysis', {}).get('analysis', '')
+        context = task_data.get('context', {})
+        mcp_clients = task_data.get('mcp_clients', self.mcp_clients)
         capability = task_data.get('capability', 'generate_response')
         llm_provider = task_data.get('llm_provider', self.llm_provider)
         llm_model = task_data.get('llm_model', self.llm_model)
@@ -86,7 +91,7 @@ class A2AResponseAgent(A2AAgent):
         if not query:
             query = 'Please generate a customer support response.'
         try:
-            prompt = self._build_prompt(query, capability)
+            prompt = self._build_prompt(query, capability, context, mcp_clients)
             response = await self._call_llm(prompt, llm_provider, llm_model)
             result = {
                 'response': response,

@@ -46,7 +46,9 @@ class A2ACoordinator(A2AAgent):
             llm_provider = query_data.get('llm_provider')
             llm_model = query_data.get('llm_model')
             api_key = query_data.get('api_key')
+            # Extract MCP context if present
             mcp_clients = query_data.get('mcp_clients', {})
+            context = query_data.get('context', {})
             # Query Agent
             query_agent = A2AQueryAgent(
                 api_key=api_key or CONFIG['ai_models']['openai_api_key'],
@@ -56,11 +58,13 @@ class A2ACoordinator(A2AAgent):
             )
             query_result = await query_agent.process_task({
                 'task_type': 'analyze_query',
-                'input_data': {'query': query_data.get('query', '')},
+                'input_data': {'query': query_data.get('query', ''), 'context': context},
                 'capability': 'analyze_query',
                 'llm_provider': llm_provider or 'openai',
                 'llm_model': llm_model or 'gpt-3.5-turbo',
-                'api_key': api_key or CONFIG['ai_models']['openai_api_key']
+                'api_key': api_key or CONFIG['ai_models']['openai_api_key'],
+                'mcp_clients': mcp_clients,
+                'customer_id': query_data.get('customer_id'),
             })
             # Knowledge Agent
             knowledge_agent = A2AKnowledgeAgent(
@@ -71,11 +75,13 @@ class A2ACoordinator(A2AAgent):
             )
             knowledge_result = await knowledge_agent.process_task({
                 'task_type': 'knowledge_search',
-                'input_data': {'query': query_data.get('query', '')},
+                'input_data': {'query': query_data.get('query', ''), 'context': context},
                 'capability': 'knowledge_search',
                 'llm_provider': llm_provider or 'gemini',
                 'llm_model': llm_model or 'gemini-pro',
-                'api_key': api_key or CONFIG['ai_models']['gemini_api_key']
+                'api_key': api_key or CONFIG['ai_models']['gemini_api_key'],
+                'mcp_clients': mcp_clients,
+                'customer_id': query_data.get('customer_id'),
             })
             # Response Agent
             response_agent = A2AResponseAgent(
@@ -91,7 +97,10 @@ class A2ACoordinator(A2AAgent):
                 'capability': 'generate_response',
                 'llm_provider': llm_provider or 'claude',
                 'llm_model': llm_model or 'claude-3-opus-20240229',
-                'api_key': api_key or CONFIG['ai_models']['claude_api_key']
+                'api_key': api_key or CONFIG['ai_models']['claude_api_key'],
+                'mcp_clients': mcp_clients,
+                'customer_id': query_data.get('customer_id'),
+                'context': context,
             })
             final_result = {
                 'workflow_id': workflow_id,
