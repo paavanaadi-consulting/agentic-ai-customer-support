@@ -1,6 +1,6 @@
 # Genetic AI Customer Support System
 
-A sophisticated multi-agent AI system that evolves and adapts to provide better customer service through genetic algorithms.
+A sophisticated multi-agent AI system that evolves and adapts to provide better customer service through genetic algorithms and advanced database integration.
 
 ## 🚀 Features
 
@@ -8,8 +8,11 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 - **Genetic Algorithm Evolution**: Agents evolve strategies for better performance
 - **Multiple Data Sources**: RDBMS, PDF documents, Vector DB, Kafka streams
 - **MCP Server Integration**: Extensible server communication protocol
+- **Full Database Integration**: Postgres schema for tickets, users, knowledge base, and analytics
 - **Real-time Processing**: Asynchronous processing of customer queries
 - **Performance Monitoring**: Built-in metrics and fitness evaluation
+- **Enhanced Dashboard**: Customer and agent analytics, satisfaction trends
+- **Extensible Scripts**: For DB initialization, seeding, health checks, and more
 
 ## 📋 Table of Contents
 
@@ -17,6 +20,8 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Architecture](#architecture)
+- [Database Schema](#database-schema)
+- [Scripts](#scripts)
 - [API Documentation](#api-documentation)
 - [Contributing](#contributing)
 - [License](#license)
@@ -69,7 +74,21 @@ python main.py
 
 5. **Initialize database**
    ```bash
-   python scripts/init_database.py
+   python scripts/init_db.py
+   # Or use the provided SQL schema:
+   psql -U <user> -d <db> -f data/postgres_schema.sql
+   ```
+
+6. **Seed database and generate sample data**
+   ```bash
+   python scripts/seed_db.py
+   python data/generate_postgres_sample_data.py
+   ```
+
+7. **(Optional) Import/Export Data**
+   ```bash
+   python scripts/import_data.py
+   python scripts/export_data.py
    ```
 
 ## ⚙️ Configuration
@@ -105,6 +124,9 @@ POPULATION_SIZE=20
 MUTATION_RATE=0.1
 CROSSOVER_RATE=0.8
 MAX_GENERATIONS=100
+
+# Environment
+ENV=development  # or production, staging, etc.
 ```
 
 ## 🚀 Usage
@@ -112,13 +134,13 @@ MAX_GENERATIONS=100
 ### Basic Usage
 
 ```python
-from main import GeneticAISupport
+from main import EnhancedGeneticAISupport
 
 # Initialize the system
-ai_support = GeneticAISupport()
+ai_support = EnhancedGeneticAISupport()
 
 # Process a customer query
-result = ai_support.process_query({
+result = await ai_support.process_query({
     'query': 'I need help with my billing issue',
     'customer_id': '12345',
     'context': {'previous_queries': []}
@@ -155,89 +177,86 @@ curl -X POST http://localhost:8000/api/query \
 ### System Overview
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Data Sources  │    │  Agent Layer    │    │   Evolution     │
-├─────────────────┤    ├─────────────────┤    ├─────────────────┤
-│ • RDBMS        │────▶│ • Query Agent   │────▶│ • Genetic       │
-│ • PDF Docs     │    │   (Claude)      │    │   Algorithm     │
-│ • Vector DB    │    │ • Knowledge     │    │ • Fitness       │
-│ • Kafka Topics │    │   Agent (Gemini)│    │   Evaluation    │
-└─────────────────┘    │ • Response      │    │ • Evolution     │
-                       │   Agent (GPT)   │    │   Engine        │
-                       └─────────────────┘    └─────────────────┘
+┌─────────────────┐    ┌──────────────────────┐    ┌─────────────────┐
+│   Data Sources  │    │  Agent Layer         │    │   Evolution     │
+├─────────────────┤    ├──────────────────────┤    ├─────────────────┤
+│ • RDBMS        │────▶│ • Enhanced Query     │────▶│ • Genetic       │
+│ • PDF Docs     │    │   Agent (Claude+DB)  │    │   Algorithm     │
+│ • Vector DB    │    │ • Knowledge Agent    │    │ • Fitness       │
+│ • Kafka Topics │    │   (Gemini+DB)        │    │   Evaluation    │
+│ • Postgres     │    │ • Response Agent     │    │ • Evolution     │
+└─────────────────┘    │   (GPT)              │    │   Engine        │
+                      └──────────────────────┘    └─────────────────┘
 ```
 
 ### Agent Workflow
 
-1. **Query Agent** (Claude): Analyzes and classifies incoming queries
-2. **Knowledge Agent** (Gemini): Retrieves and synthesizes relevant information
-3. **Response Agent** (GPT): Crafts appropriate customer responses
-4. **Evolution Engine**: Continuously improves agent strategies
+1. **Enhanced Query Agent** (Claude+DB): Analyzes and classifies queries with database context
+2. **Knowledge Agent** (Gemini+DB): Retrieves and synthesizes information from knowledge base and documents
+3. **Response Agent** (GPT): Crafts customer responses
+4. **Evolution Engine**: Improves agent strategies
 
 ### Project Structure
 
 ```
 genetic-ai-customer-support/
-├── README.md
-├── requirements.txt
-├── .env.example
-├── .gitignore
-├── LICENSE
-├── setup.py
 ├── main.py
 ├── config/
-│   ├── __init__.py
-│   ├── settings.py
-│   └── mcp_config.py
+│   ├── env_settings.py  # Unified, environment-specific config
+│   └── ...
 ├── core/
-│   ├── __init__.py
-│   ├── genetic_algorithm.py
-│   ├── fitness_evaluator.py
-│   └── evolution_engine.py
+│   ├── evolution_engine.py
+│   └── ...
 ├── agents/
-│   ├── __init__.py
-│   ├── base_agent.py
-│   ├── query_agent.py
+│   ├── enhanced_query_agent.py
 │   ├── knowledge_agent.py
-│   └── response_agent.py
+│   ├── response_agent.py
+│   └── ...
 ├── data_sources/
-│   ├── __init__.py
-│   ├── rdbms_connector.py
 │   ├── pdf_processor.py
+│   ├── rdbms_connector.py
 │   ├── vector_db_client.py
-│   └── kafka_consumer.py
+│   ├── kafka_consumer.py
+│   └── ...
 ├── mcp_servers/
-│   ├── __init__.py
-│   ├── mcp_client.py
-│   └── server_manager.py
-├── utils/
-│   ├── __init__.py
-│   ├── logger.py
-│   ├── metrics.py
-│   └── helpers.py
-├── api/
-│   ├── __init__.py
-│   ├── routes.py
-│   └── middleware.py
+│   ├── postgres_mcp.py
+│   ├── aws_mcp.py
+│   ├── kafka_mcp.py
+│   └── ...
 ├── scripts/
-│   ├── init_database.py
-│   ├── migrate.py
-│   └── benchmark.py
-├── tests/
-│   ├── __init__.py
-│   ├── test_agents.py
-│   ├── test_genetic_algorithm.py
-│   ├── test_data_sources.py
-│   └── test_integration.py
-├── docs/
-│   ├── api.md
-│   ├── configuration.md
-│   └── development.md
-└── examples/
-    ├── basic_usage.py
-    ├── custom_agent.py
-    └── training_example.py
+│   ├── init_db.py
+│   ├── seed_db.py
+│   ├── import_data.py
+│   ├── export_data.py
+│   ├── cleanup.py
+│   ├── health_check.py
+│   └── test_api.py
+├── data/
+│   ├── postgres_schema.sql  # Full Postgres schema
+│   ├── generate_postgres_sample_data.py
+│   └── ...
+├── api/
+│   ├── routes.py
+│   ├── schemas.py
+│   └── ...
+├── utils/
+│   └── logger.py
+└── ...
 ```
+
+## 🗄 Database Schema
+
+A full Postgres schema is provided in `data/postgres_schema.sql` for customer support, tickets, users, knowledge base, messages, and analytics. See the file for details and customization.
+
+## 🛠 Scripts
+
+- `scripts/init_db.py`: Initialize the database
+- `scripts/seed_db.py`: Seed the database with sample data
+- `scripts/import_data.py` / `scripts/export_data.py`: Import/export data
+- `scripts/cleanup.py`: Clean up test or old data
+- `scripts/health_check.py`: System and DB health checks
+- `scripts/test_api.py`: Test API endpoints
+- `data/generate_postgres_sample_data.py`: Generate sample data for Postgres
 
 ## 📚 API Documentation
 
