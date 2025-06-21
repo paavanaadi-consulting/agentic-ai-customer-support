@@ -4,15 +4,16 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 
 ## 🚀 Features
 
-- **Multi-Agent Architecture**: Three specialized AI agents (Claude, Gemini, GPT)
+- **Multi-Agent Architecture**: Modular agents (Claude, Gemini, GPT) with database context
 - **Genetic Algorithm Evolution**: Agents evolve strategies for better performance
 - **Multiple Data Sources**: RDBMS, PDF documents, Vector DB, Kafka streams
 - **MCP Server Integration**: Extensible server communication protocol
 - **Full Database Integration**: Postgres schema for tickets, users, knowledge base, and analytics
+- **Unified Environment Config**: All settings via `config/env_settings.py` and `.env`
 - **Real-time Processing**: Asynchronous processing of customer queries
-- **Performance Monitoring**: Built-in metrics and fitness evaluation
-- **Enhanced Dashboard**: Customer and agent analytics, satisfaction trends
-- **Extensible Scripts**: For DB initialization, seeding, health checks, and more
+- **Performance Monitoring**: Built-in metrics, fitness evaluation, and health checks
+- **Enhanced Dashboard**: Customer and agent analytics, satisfaction trends, database health
+- **Extensible Scripts**: For DB initialization, seeding, import/export, health checks, and more
 
 ## 📋 Table of Contents
 
@@ -22,6 +23,7 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 - [Architecture](#architecture)
 - [Database Schema](#database-schema)
 - [Scripts](#scripts)
+- [Docker Compose](#docker-compose)
 - [API Documentation](#api-documentation)
 - [Contributing](#contributing)
 - [License](#license)
@@ -93,7 +95,8 @@ python main.py
 
 ## ⚙️ Configuration
 
-### Environment Variables
+- All environment-specific settings are managed in `config/env_settings.py` and `.env`.
+- Supports development, staging, and production environments.
 
 Create a `.env` file with the following variables:
 
@@ -244,10 +247,6 @@ genetic-ai-customer-support/
 └── ...
 ```
 
-## 🗄 Database Schema
-
-A full Postgres schema is provided in `data/postgres_schema.sql` for customer support, tickets, users, knowledge base, messages, and analytics. See the file for details and customization.
-
 ## 🛠 Scripts
 
 - `scripts/init_db.py`: Initialize the database
@@ -257,6 +256,26 @@ A full Postgres schema is provided in `data/postgres_schema.sql` for customer su
 - `scripts/health_check.py`: System and DB health checks
 - `scripts/test_api.py`: Test API endpoints
 - `data/generate_postgres_sample_data.py`: Generate sample data for Postgres
+
+## 🐳 Docker Compose
+
+- Use `docker-compose.yml` to spin up the full stack (API, Postgres, Kafka, Vector DB, etc.)
+- Example:
+  ```bash
+  docker-compose up -d
+  docker-compose logs -f
+  docker-compose down
+  ```
+- Edit `.env` and `docker-compose.yml` for your environment.
+
+## 🗄 Database Schema
+
+A full Postgres schema is provided in `data/postgres_schema.sql` for customer support, tickets, users, knowledge base, messages, and analytics. See the file for details and customization.
+
+## 🏥 Health & Monitoring
+
+- System and database health checks via `scripts/health_check.py` and dashboard
+- Enhanced dashboard at `http://localhost:8000/dashboard` shows agent, system, and DB metrics
 
 ## 📚 API Documentation
 
