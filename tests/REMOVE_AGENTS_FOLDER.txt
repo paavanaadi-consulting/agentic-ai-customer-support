@@ -1,0 +1,1 @@
+The agents/ folder in tests/ is being removed as all legacy agent tests are deprecated and replaced by a2a_protocol/ tests.
