@@ -1,4 +1,3 @@
-
 # FILE: main_enhanced.py
 """
 Enhanced main application with full database integration
@@ -8,7 +7,7 @@ import asyncio
 import argparse
 import logging
 import time
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from pathlib import Path
 
 from config.settings import CONFIG
@@ -21,6 +20,10 @@ from data_sources.pdf_processor import PDFProcessor
 from data_sources.vector_db_client import VectorDBClient
 from data_sources.kafka_consumer import KafkaConsumer
 from mcp_servers.server_manager import MCPServerManager
+from mcp_servers.mcp_client import MCPClient
+from mcp_servers.postgres_mcp import PostgresMCP
+from mcp_servers.kafka_mcp import KafkaMCP
+from mcp_servers.aws_mcp import AWSMCP
 from utils.logger import setup_logger
 from api.routes import create_app
 
@@ -34,6 +37,7 @@ class EnhancedGeneticAISupport:
         self.database_service = None
         self.evolution_engine = None
         self.mcp_manager = None
+        self.mcp_clients = {}  # Store MCP clients for all connectors
         self.initialized = False
     
     async def initialize(self):
@@ -55,6 +59,9 @@ class EnhancedGeneticAISupport:
             
             # Initialize MCP server manager
             await self._initialize_mcp_manager()
+            
+            # Initialize MCP clients for connectors
+            await self._initialize_mcp_clients()
             
             self.initialized = True
             self.logger.info("Enhanced system initialization complete!")
@@ -127,6 +134,25 @@ class EnhancedGeneticAISupport:
         await self.mcp_manager.initialize()
         self.logger.info("MCP server manager initialized successfully")
     
+    async def _initialize_mcp_clients(self):
+        """Initialize all MCP connectors and wrap with MCPClient"""
+        self.mcp_clients = {}
+        # Example configs; replace with your actual config structure
+        postgres_cfg = CONFIG.get('mcp_postgres', {})
+        kafka_cfg = CONFIG.get('mcp_kafka', {})
+        aws_cfg = CONFIG.get('mcp_aws', {})
+        # Initialize each MCP implementation and wrap with MCPClient
+        if postgres_cfg:
+            self.mcp_clients['postgres'] = MCPClient(PostgresMCP(postgres_cfg))
+        if kafka_cfg:
+            self.mcp_clients['kafka'] = MCPClient(KafkaMCP(kafka_cfg))
+        if aws_cfg:
+            self.mcp_clients['aws'] = MCPClient(AWSMCP(aws_cfg))
+        # Connect all MCP clients
+        for client in self.mcp_clients.values():
+            client.connect()
+        self.logger.info(f"Initialized MCP clients: {list(self.mcp_clients.keys())}")
+    
     async def process_query(self, query_data: Dict[str, Any]) -> Dict[str, Any]:
         """Enhanced query processing with full database integration"""
         if not self.initialized:
@@ -137,6 +163,9 @@ class EnhancedGeneticAISupport:
         try:
             # Pre-process query with database service
             enhanced_query_data = await self.database_service.process_customer_query(query_data)
+            
+            # Add MCP info to enhanced_query_data
+            enhanced_query_data['mcp_clients'] = self.mcp_clients
             
             # Step 1: Enhanced Query Analysis (Claude with DB context)
             self.logger.info(f"Processing query for customer {enhanced_query_data.get('customer_id')}")
@@ -150,6 +179,7 @@ class EnhancedGeneticAISupport:
                 'customer_id': enhanced_query_data.get('customer_id'),
                 'ticket_id': enhanced_query_data.get('ticket_id')
             }
+            knowledge_data['mcp_clients'] = self.mcp_clients
             knowledge_result = await self.agents['knowledge'].process_input(knowledge_data)
             
             # Step 3: Response Generation (GPT with context)
@@ -160,6 +190,7 @@ class EnhancedGeneticAISupport:
                 'ticket_id': enhanced_query_data.get('ticket_id'),
                 'session_id': enhanced_query_data.get('session_id')
             }
+            response_data['mcp_clients'] = self.mcp_clients
             response_result = await self.agents['response'].process_input(response_data)
             
             # Calculate total processing time
