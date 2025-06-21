@@ -1,6 +1,7 @@
 """
-Settings/config loader for the project.
+Unified environment-specific settings loader for the project.
 """
+import os
 from pydantic import BaseSettings
 from dotenv import load_dotenv
 
@@ -62,8 +63,30 @@ class Settings(BaseSettings):
     AZURE_STORAGE_CONTAINER: str = "mycontainer"
     AZURE_STORAGE_CONNECTION_STRING: str = "DefaultEndpointsProtocol=https;AccountName=myazureaccount;AccountKey=myazurekey;EndpointSuffix=core.windows.net"
 
+    # Environment
+    ENV: str = os.getenv("ENV", "development")
+    DEBUG: bool = False
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-settings = Settings()
+class DevSettings(Settings):
+    DEBUG: bool = True
+
+class ProdSettings(Settings):
+    DEBUG: bool = False
+
+class TestSettings(Settings):
+    DEBUG: bool = True
+
+# Select settings class based on ENV
+env = os.getenv("ENV", "development").lower()
+if env == "production":
+    EnvSettings = ProdSettings
+elif env == "test":
+    EnvSettings = TestSettings
+else:
+    EnvSettings = DevSettings
+
+env_settings = EnvSettings()
