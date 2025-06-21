@@ -2,7 +2,7 @@ import time
 import json
 from typing import Dict, Any
 from agents.query_agent import QueryAgent
-from data_sources.enhanced_rdbms_connector import EnhancedRDBMSConnector
+from data_sources.rdbms_connector import EnhancedRDBMSConnector
 
 class EnhancedQueryAgent(QueryAgent):
     """Enhanced Query Agent with database integration"""
