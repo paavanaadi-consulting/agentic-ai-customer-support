@@ -1,6 +1,6 @@
 # FILE: requirements.txt
-anthropic>=0.25.0
 google-generativeai>=0.3.0
+anthropic>=0.25.0
 openai>=1.0.0
 psycopg2-binary
 boto3
@@ -27,3 +27,4 @@ black>=23.0.0
 flake8>=6.0.0
 mypy>=1.0.0
 pre-commit>=3.0.0
+langchain>=0.1.0
