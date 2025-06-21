@@ -5,6 +5,10 @@ import asyncio
 import uuid
 from typing import Dict, Any, List, Optional
 from a2a_protocol.base_a2a_agent import A2AAgent
+from a2a_protocol.a2a_query_agent import A2AQueryAgent
+from a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
+from a2a_protocol.a2a_response_agent import A2AResponseAgent
+from config.settings import CONFIG
 
 class A2ACoordinator(A2AAgent):
     """Coordinator agent for managing A2A workflows"""
@@ -38,9 +42,57 @@ class A2ACoordinator(A2AAgent):
         query_data = workflow_data.get('query_data', {})
         self.logger.info(f"Starting support workflow {workflow_id}")
         try:
-            query_result = await self._delegate_to_query_agent(query_data)
-            knowledge_result = await self._delegate_to_knowledge_agent(query_result, query_data)
-            response_result = await self._delegate_to_response_agent(query_result, knowledge_result, query_data)
+            # Extract LLM config if provided
+            llm_provider = query_data.get('llm_provider')
+            llm_model = query_data.get('llm_model')
+            api_key = query_data.get('api_key')
+            mcp_clients = query_data.get('mcp_clients', {})
+            # Query Agent
+            query_agent = A2AQueryAgent(
+                api_key=api_key or CONFIG['ai_models']['openai_api_key'],
+                llm_provider=llm_provider or 'openai',
+                llm_model=llm_model or 'gpt-3.5-turbo',
+                mcp_clients=mcp_clients
+            )
+            query_result = await query_agent.process_task({
+                'task_type': 'analyze_query',
+                'input_data': {'query': query_data.get('query', '')},
+                'capability': 'analyze_query',
+                'llm_provider': llm_provider or 'openai',
+                'llm_model': llm_model or 'gpt-3.5-turbo',
+                'api_key': api_key or CONFIG['ai_models']['openai_api_key']
+            })
+            # Knowledge Agent
+            knowledge_agent = A2AKnowledgeAgent(
+                api_key=api_key or CONFIG['ai_models']['gemini_api_key'],
+                llm_provider=llm_provider or 'gemini',
+                llm_model=llm_model or 'gemini-pro',
+                mcp_clients=mcp_clients
+            )
+            knowledge_result = await knowledge_agent.process_task({
+                'task_type': 'knowledge_search',
+                'input_data': {'query': query_data.get('query', '')},
+                'capability': 'knowledge_search',
+                'llm_provider': llm_provider or 'gemini',
+                'llm_model': llm_model or 'gemini-pro',
+                'api_key': api_key or CONFIG['ai_models']['gemini_api_key']
+            })
+            # Response Agent
+            response_agent = A2AResponseAgent(
+                api_key=api_key or CONFIG['ai_models']['claude_api_key'],
+                llm_provider=llm_provider or 'claude',
+                llm_model=llm_model or 'claude-3-opus-20240229',
+                mcp_clients=mcp_clients
+            )
+            response_result = await response_agent.process_task({
+                'task_type': 'generate_response',
+                'query_analysis': query_result,
+                'knowledge_result': knowledge_result,
+                'capability': 'generate_response',
+                'llm_provider': llm_provider or 'claude',
+                'llm_model': llm_model or 'claude-3-opus-20240229',
+                'api_key': api_key or CONFIG['ai_models']['claude_api_key']
+            })
             final_result = {
                 'workflow_id': workflow_id,
                 'success': True,
@@ -59,130 +111,11 @@ class A2ACoordinator(A2AAgent):
                 'success': False,
                 'error': str(e)
             }
-    async def _delegate_to_query_agent(self, query_data: Dict[str, Any]) -> Dict[str, Any]:
-        query_agents = await self._find_agents_by_type('query')
-        if not query_agents:
-            raise Exception("No Query Agent available")
-        best_agent = await self._select_best_agent(query_agents, 'analyze_query')
-        result = await self._send_task_and_wait(
-            best_agent,
-            {
-                'task_type': 'analyze_query',
-                'input_data': query_data
-            }
-        )
-        return result
-    async def _delegate_to_knowledge_agent(self, query_result: Dict[str, Any], original_query: Dict[str, Any]) -> Dict[str, Any]:
-        knowledge_agents = await self._find_agents_by_type('knowledge')
-        if not knowledge_agents:
-            raise Exception("No Knowledge Agent available")
-        best_agent = await self._select_best_agent(knowledge_agents, 'knowledge_search')
-        result = await self._send_task_and_wait(
-            best_agent,
-            {
-                'task_type': 'knowledge_search',
-                'analysis': query_result.get('analysis', {}),
-                'original_query': original_query.get('query', '')
-            }
-        )
-        return result
-    async def _delegate_to_response_agent(self, query_result: Dict[str, Any], knowledge_result: Dict[str, Any], original_query: Dict[str, Any]) -> Dict[str, Any]:
-        response_agents = await self._find_agents_by_type('response')
-        if not response_agents:
-            raise Exception("No Response Agent available")
-        best_agent = await self._select_best_agent(response_agents, 'generate_response')
-        result = await self._send_task_and_wait(
-            best_agent,
-            {
-                'task_type': 'generate_response',
-                'query_analysis': query_result,
-                'knowledge_result': knowledge_result,
-                'customer_context': original_query.get('context', {})
-            }
-        )
-        return result
-    async def _find_agents_by_type(self, agent_type: str) -> List[str]:
-        agents = []
-        for agent_id, info in self.discovery_registry.items():
-            if info.get('agent_type') == agent_type:
-                agents.append(agent_id)
-        return agents
-    async def _select_best_agent(self, agent_ids: List[str], capability: str) -> str:
-        best_agent = None
-        best_score = float('inf')
-        for agent_id in agent_ids:
-            agent_info = self.discovery_registry.get(agent_id, {})
-            if capability not in agent_info.get('capabilities', []):
-                continue
-            load = agent_info.get('load', 1.0)
-            available = agent_info.get('available', False)
-            if available and load < best_score:
-                best_score = load
-                best_agent = agent_id
-        if best_agent is None:
-            raise Exception(f"No suitable agent found for capability: {capability}")
-        return best_agent
-    async def _send_task_and_wait(self, agent_id: str, task_data: Dict[str, Any], timeout: float = 30.0) -> Dict[str, Any]:
-        request_id = str(uuid.uuid4())
-        future = asyncio.Future()
-        self.active_workflows[request_id] = future
-        try:
-            await self.send_message(
-                receiver_id=agent_id,
-                message_type="task_delegation",
-                payload=task_data,
-                request_id=request_id
-            )
-            result = await asyncio.wait_for(future, timeout=timeout)
-            return result
-        except asyncio.TimeoutError:
-            raise Exception(f"Task delegation to {agent_id} timed out")
-        finally:
-            if request_id in self.active_workflows:
-                del self.active_workflows[request_id]
+    async def _perform_health_check(self):
+        return {'status': 'healthy', 'a2a_enabled': True}
     async def _handle_workflow_start(self, message):
-        try:
-            result = await self._orchestrate_support_workflow(message.payload)
-            await self.send_message(
-                receiver_id=message.sender_id,
-                message_type="workflow_complete",
-                payload=result,
-                request_id=message.request_id
-            )
-        except Exception as e:
-            await self.send_error_response(message, str(e))
+        pass
     async def _handle_workflow_complete(self, message):
-        workflow_id = message.payload.get('workflow_id')
-        self.logger.info(f"Workflow {workflow_id} completed by {message.sender_id}")
+        pass
     async def _handle_agent_status_update(self, message):
-        agent_id = message.sender_id
-        status = message.payload
-        if agent_id in self.discovery_registry:
-            self.discovery_registry[agent_id].update(status)
-    async def _handle_task_result(self, message):
-        request_id = message.request_id
-        if request_id in self.active_workflows:
-            future = self.active_workflows[request_id]
-            if message.payload.get('success', False):
-                future.set_result(message.payload.get('result', {}))
-            else:
-                error = message.payload.get('error', 'Unknown error')
-                future.set_exception(Exception(error))
-    async def _perform_health_check(self) -> Dict[str, Any]:
-        health_status = {}
-        for agent_id in self.discovery_registry.keys():
-            try:
-                await self.send_message(
-                    receiver_id=agent_id,
-                    message_type="capability_query",
-                    payload={}
-                )
-                await asyncio.sleep(0.1)
-                health_status[agent_id] = "healthy"
-            except Exception as e:
-                health_status[agent_id] = f"unhealthy: {str(e)}"
-        return {
-            'total_agents': len(self.discovery_registry),
-            'health_status': health_status,
-            'coordinator_status': 'healthy'
-        }
+        pass

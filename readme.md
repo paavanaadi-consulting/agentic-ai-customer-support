@@ -16,6 +16,7 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 
 - **A2A Protocol**: Modular agents communicate directly via WebSockets for scalable, decoupled orchestration
 - **Multi-Agent Architecture**: Modular agents (Claude, Gemini, GPT) with database context
+- **Dynamic LLM Selection**: Agents can use OpenAI, Gemini, or Claude LLMs, with provider/model/API key set via config or per-request
 - **Genetic Algorithm Evolution**: Agents evolve strategies for better performance
 - **Multiple Data Sources**: RDBMS, PDF documents, Vector DB, Kafka streams
 - **MCP Server Integration**: Extensible server communication protocol
@@ -25,6 +26,62 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 - **Performance Monitoring**: Built-in metrics, fitness evaluation, and health checks
 - **Enhanced Dashboard**: Customer and agent analytics, satisfaction trends, database health
 - **Extensible Scripts**: For DB initialization, seeding, import/export, health checks, and more
+
+---
+
+## 🆕 Key Updates (2025)
+
+- **All agents now support dynamic LLM selection (OpenAI, Gemini, Claude) for all LLM operations.**
+- **Prompt templates are used for each agent capability (intent, knowledge, response, etc).**
+- **All A2A agents accept `mcp_clients` for context-aware LLM prompting (Postgres, Kafka, AWS, etc).**
+- **Legacy agents are fully deprecated; only use `a2a_protocol/` agents.**
+- **See `examples/a2a_usage_example.py` for modern usage.**
+
+---
+
+# 🆕 A2A Agent Initialization Example (Multi-LLM)
+
+```python
+from a2a_protocol.a2a_query_agent import A2AQueryAgent
+from a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
+from a2a_protocol.a2a_response_agent import A2AResponseAgent
+from a2a_protocol.a2a_coordinator import A2ACoordinator
+
+# Pass API key, LLM provider/model, and MCP clients for context
+query_agent = A2AQueryAgent(api_key="<OPENAI_API_KEY>", llm_provider="openai", llm_model="gpt-3.5-turbo", mcp_clients=mcp_clients)
+knowledge_agent = A2AKnowledgeAgent(api_key="<GEMINI_API_KEY>", llm_provider="gemini", llm_model="gemini-pro", mcp_clients=mcp_clients)
+response_agent = A2AResponseAgent(api_key="<CLAUDE_API_KEY>", llm_provider="claude", llm_model="claude-3-opus-20240229", mcp_clients=mcp_clients)
+coordinator = A2ACoordinator()
+```
+
+---
+
+# 🆕 Orchestrator Workflow Example (Dynamic LLM)
+
+The coordinator can orchestrate a workflow where each agent uses a different LLM provider/model, as configured globally or per-request:
+
+```python
+import asyncio
+from a2a_protocol.a2a_coordinator import A2ACoordinator
+
+async def run_workflow():
+    coordinator = A2ACoordinator()
+    workflow_data = {
+        "task_type": "customer_support_workflow",
+        "query_data": {
+            "query": "How do I upgrade?",
+            "customer_id": "12345",
+            # Optionally specify LLM config per agent/task:
+            "llm_provider": "openai",
+            "llm_model": "gpt-3.5-turbo",
+            "api_key": "<OPENAI_API_KEY>"
+        }
+    }
+    result = await coordinator.process_task(workflow_data)
+    print(result)
+
+asyncio.run(run_workflow())
+```
 
 ---
 
@@ -38,7 +95,7 @@ from a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
 from a2a_protocol.a2a_response_agent import A2AResponseAgent
 from a2a_protocol.a2a_coordinator import A2ACoordinator
 
-# Initialize agents
+# Initialize agents (default: OpenAI, override as needed)
 query_agent = A2AQueryAgent()
 knowledge_agent = A2AKnowledgeAgent()
 response_agent = A2AResponseAgent()
@@ -369,6 +426,17 @@ ws.send(JSON.stringify({
   }
 }));
 ```
+
+## ⚡️ Agent Prompt Templates
+
+Each agent uses a prompt template tailored to its capability. Example for Query Agent:
+
+- **analyze_query**: "You are an AI assistant. Analyze the following customer query and provide a structured analysis including intent, entities, sentiment, urgency, and language: ..."
+- **classify_intent**: "Classify the intent of this customer query: ..."
+- **extract_entities**: "Extract all relevant entities from this query: ..."
+- ...and so on for all agent capabilities.
+
+Knowledge and Response agents have similar templates for their respective tasks.
 
 ## 🧬 Genetic Algorithm Details
 

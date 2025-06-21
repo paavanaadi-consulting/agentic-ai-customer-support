@@ -12,9 +12,10 @@ from pathlib import Path
 
 from config.settings import CONFIG
 from core.evolution_engine import EvolutionEngine
-from agents.enhanced_query_agent import EnhancedQueryAgent
-from agents.knowledge_agent import KnowledgeAgent
-from agents.response_agent import ResponseAgent
+from a2a_protocol.a2a_query_agent import A2AQueryAgent
+from a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
+from a2a_protocol.a2a_response_agent import A2AResponseAgent
+from a2a_protocol.a2a_coordinator import A2ACoordinator
 from integration.database_service import DatabaseService
 from data_sources.pdf_processor import PDFProcessor
 from data_sources.vector_db_client import VectorDBClient
@@ -98,13 +99,13 @@ class EnhancedGeneticAISupport:
     async def _initialize_enhanced_agents(self):
         """Initialize enhanced agents with database integration"""
         # Enhanced Query Agent (Claude) with database
-        self.agents['query'] = EnhancedQueryAgent(
+        self.agents['query'] = A2AQueryAgent(
             api_key=CONFIG['ai_models'].claude_api_key,
             db_connector=self.database_service.db
         )
         
         # Knowledge Agent (Gemini) with database knowledge source
-        self.agents['knowledge'] = KnowledgeAgent(
+        self.agents['knowledge'] = A2AKnowledgeAgent(
             api_key=CONFIG['ai_models'].gemini_api_key
         )
         
@@ -113,7 +114,7 @@ class EnhancedGeneticAISupport:
         self.agents['knowledge'].set_knowledge_sources(knowledge_sources)
         
         # Response Agent (GPT)
-        self.agents['response'] = ResponseAgent(
+        self.agents['response'] = A2AResponseAgent(
             api_key=CONFIG['ai_models'].openai_api_key
         )
         
