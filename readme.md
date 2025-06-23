@@ -1,16 +1,15 @@
-
 # Agentic AI Customer Support System
 
-A sophisticated multi-agent AI system that evolves and adapts to provide better customer service through agentic workflows, genetic algorithms, and advanced database integration.
+A sophisticated multi-agent AI system that evolves and adapts to provide better customer service through agentic workflows, genetic algorithms, and advanced database integration. The system now features comprehensive **Model Context Protocol (MCP)** integration for modular, scalable data and service access.
 
 ## 🚀 Features
 
 - **A2A Protocol**: Modular agents communicate directly via WebSockets for scalable, decoupled orchestration
+- **MCP Integration**: Model Context Protocol servers for database, Kafka, and AWS operations
 - **Multi-Agent Architecture**: Modular agents (Claude, Gemini, GPT) with database context
 - **Dynamic LLM Selection**: Agents can use OpenAI, Gemini, or Claude LLMs, with provider/model/API key set via config or per-request
 - **Genetic Algorithm Evolution**: Agents evolve strategies for better performance
 - **Multiple Data Sources**: RDBMS, PDF documents, Vector DB, Kafka streams
-- **MCP Server Integration**: Extensible server communication protocol
 - **Full Database Integration**: Postgres schema for tickets, users, knowledge base, and analytics
 - **Unified Environment Config**: All settings via `config/settings.py` and `.env`
 - **Real-time Processing**: Asynchronous processing of customer queries
@@ -22,14 +21,55 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 
 ## 🆕 Key Updates (2025)
 
-- **All agents now support dynamic LLM selection (OpenAI, Gemini, Claude) for all LLM operations.**
-- **Prompt templates are used for each agent capability (intent, knowledge, response, etc).**
-- **All A2A agents accept `mcp_clients` for context-aware LLM prompting (Postgres, Kafka, AWS, etc).**
-
+- **MCP Integration**: Full Model Context Protocol implementation with dedicated servers for database, Kafka, and AWS operations
+- **All agents now support dynamic LLM selection (OpenAI, Gemini, Claude) for all LLM operations**
+- **Prompt templates are used for each agent capability (intent, knowledge, response, etc)**
+- **All A2A agents accept `mcp_clients` for context-aware LLM prompting (Postgres, Kafka, AWS, etc)**
+- **Comprehensive unit tests for all MCP servers and clients**
+- **Docker Compose setup with MCP servers as separate services**
 
 ---
 
-# 🆕 A2A Agent Initialization Example (Multi-LLM)
+## 🔧 Model Context Protocol (MCP) Architecture
+
+The system uses MCP servers to provide modular access to various services:
+
+### MCP Servers
+- **Database MCP Server** (`mcp/database_mcp_server.py`): PostgreSQL operations
+- **Kafka MCP Server** (`mcp/kafka_mcp_server.py`): Apache Kafka messaging
+- **AWS MCP Server** (`mcp/aws_mcp_server.py`): AWS services (S3, Lambda, SSM)
+
+### MCP Client Manager
+- **MCP Client** (`mcp/mcp_client.py`): Unified interface for MCP server communication
+- **Client Manager**: Manages multiple MCP connections for agents
+
+### Quick MCP Example
+```python
+from mcp.mcp_client import MCPClientManager
+
+# Initialize MCP client manager
+mcp_manager = MCPClientManager()
+
+# Connect to MCP servers
+await mcp_manager.add_client("mcp_database", "ws://localhost:8001")
+await mcp_manager.add_client("mcp_kafka", "ws://localhost:8002")
+await mcp_manager.add_client("mcp_aws", "ws://localhost:8003")
+
+# Use MCP tools
+customer_data = await mcp_manager.call_tool("mcp_database", "get_customer_context", {
+    "customer_id": "12345"
+})
+
+# Publish to Kafka
+await mcp_manager.call_tool("mcp_kafka", "publish_message", {
+    "topic": "customer-queries",
+    "message": {"query": "How to reset password?", "customer_id": "12345"}
+})
+```
+
+---
+
+# 🆕 A2A Agent Initialization with MCP Integration
 
 ```python
 from a2a_protocol.a2a_query_agent import A2AQueryAgent
@@ -37,16 +77,40 @@ from a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
 from a2a_protocol.a2a_response_agent import A2AResponseAgent
 from a2a_protocol.a2a_coordinator import A2ACoordinator
 
-# Pass API key, LLM provider/model, and MCP clients for context
-query_agent = A2AQueryAgent(api_key="<OPENAI_API_KEY>", llm_provider="openai", llm_model="gpt-3.5-turbo", mcp_clients=mcp_clients)
-knowledge_agent = A2AKnowledgeAgent(api_key="<GEMINI_API_KEY>", llm_provider="gemini", llm_model="gemini-pro", mcp_clients=mcp_clients)
-response_agent = A2AResponseAgent(api_key="<CLAUDE_API_KEY>", llm_provider="claude", llm_model="claude-3-opus-20240229", mcp_clients=mcp_clients)
+# MCP configuration
+mcp_config = {
+    "servers": {
+        "mcp_database": {"uri": "ws://localhost:8001"},
+        "mcp_kafka": {"uri": "ws://localhost:8002"},
+        "mcp_aws": {"uri": "ws://localhost:8003"}
+    }
+}
+
+# Initialize agents with MCP integration
+query_agent = A2AQueryAgent(
+    agent_id="query-agent-1", 
+    agent_type="query",
+    mcp_config=mcp_config
+)
+
+knowledge_agent = A2AKnowledgeAgent(
+    agent_id="knowledge-agent-1",
+    agent_type="knowledge", 
+    mcp_config=mcp_config
+)
+
+response_agent = A2AResponseAgent(
+    agent_id="response-agent-1",
+    agent_type="response",
+    mcp_config=mcp_config
+)
+
 coordinator = A2ACoordinator()
 ```
 
 ---
 
-# 🆕 Orchestrator Workflow Example (Dynamic LLM)
+# 🆕 Orchestrator Workflow with MCP Integration
 
 The coordinator can orchestrate a workflow where each agent uses a different LLM provider/model, as configured globally or per-request:
 

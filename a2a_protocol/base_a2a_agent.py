@@ -1,5 +1,5 @@
 """
-Base A2A agent with protocol capabilities
+Base A2A agent with protocol capabilities and MCP integration
 """
 import asyncio
 import json
@@ -9,6 +9,12 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 import websockets
 import logging
+import sys
+import os
+
+# Add parent directory to path for MCP imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from mcp.mcp_client import MCPClientManager
 
 class A2AMessage:
     """A2A protocol message structure"""
@@ -44,8 +50,8 @@ class A2AMessage:
         return msg
 
 class A2AAgent(ABC):
-    """Base A2A agent with communication capabilities"""
-    def __init__(self, agent_id: str, agent_type: str, port: int = None):
+    """Base A2A agent with communication capabilities and MCP integration"""
+    def __init__(self, agent_id: str, agent_type: str, port: int = None, mcp_config: Dict[str, Any] = None):
         self.agent_id = agent_id
         self.agent_type = agent_type
         self.port = port or self._get_default_port()
@@ -61,11 +67,21 @@ class A2AAgent(ABC):
             'successful_collaborations': 0,
             'failed_collaborations': 0
         }
+        
+        # MCP integration
+        self.mcp_manager = MCPClientManager()
+        self.mcp_config = mcp_config or {}
+        
         self._register_default_handlers()
     def _get_default_port(self) -> int:
         port_map = {'query': 8001, 'knowledge': 8002, 'response': 8003, 'coordinator': 8004}
         return port_map.get(self.agent_type, 8000)
     async def start(self):
+        """Start the A2A agent with MCP connections"""
+        # Initialize MCP connections
+        await self._setup_mcp_connections()
+        
+        # Start websocket server
         self.server = await websockets.serve(self._handle_connection, 'localhost', self.port)
         self.running = True
         self.logger.info(f"A2A agent {self.agent_id} started on port {self.port}")
@@ -322,3 +338,29 @@ class A2AAgent(ABC):
             'known_agents': len(self.discovery_registry),
             'agent_load': self._get_current_load()
         }
+    async def _setup_mcp_connections(self):
+        """Setup MCP client connections based on configuration"""
+        mcp_servers = self.mcp_config.get('servers', {})
+        
+        for server_id, config in mcp_servers.items():
+            connection_uri = config.get('uri')
+            if connection_uri:
+                success = await self.mcp_manager.add_client(server_id, connection_uri)
+                if success:
+                    self.logger.info(f"Connected to MCP server: {server_id}")
+                else:
+                    self.logger.error(f"Failed to connect to MCP server: {server_id}")
+    async def call_mcp_tool(self, server_id: str, tool_name: str, arguments: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Call a tool on an MCP server"""
+        try:
+            return await self.mcp_manager.call_tool(server_id, tool_name, arguments)
+        except Exception as e:
+            self.logger.error(f"MCP tool call failed: {e}")
+            return {'success': False, 'error': str(e)}
+    async def get_mcp_resource(self, server_id: str, resource_uri: str) -> Dict[str, Any]:
+        """Get a resource from an MCP server"""
+        try:
+            return await self.mcp_manager.get_resource(server_id, resource_uri)
+        except Exception as e:
+            self.logger.error(f"MCP resource request failed: {e}")
+            return {'success': False, 'error': str(e)}

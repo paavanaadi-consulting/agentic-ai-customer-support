@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Main application
   agentic-ai-customer-support:
     build: .
     ports:
@@ -16,6 +17,12 @@ services:
       - VECTOR_DB_PORT=6333
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - MCP_DATABASE_HOST=mcp-database
+      - MCP_DATABASE_PORT=8001
+      - MCP_KAFKA_HOST=mcp-kafka
+      - MCP_KAFKA_PORT=8002
+      - MCP_AWS_HOST=mcp-aws
+      - MCP_AWS_PORT=8003
     depends_on:
       postgres:
         condition: service_healthy
@@ -24,6 +31,12 @@ services:
       qdrant:
         condition: service_started
       redis:
+        condition: service_started
+      mcp-database:
+        condition: service_started
+      mcp-kafka:
+        condition: service_started
+      mcp-aws:
         condition: service_started
     volumes:
       - ./data:/app/data
@@ -36,6 +49,64 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    restart: unless-stopped
+
+  # MCP Database Server
+  mcp-database:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    ports:
+      - "8001:8001"
+    environment:
+      - MCP_SERVER_TYPE=database
+      - MCP_SERVER_PORT=8001
+      - DATABASE_URL=postgresql://admin:password@postgres:5432/customer_support
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    command: ["python", "-m", "mcp.database_mcp_server"]
+    restart: unless-stopped
+
+  # MCP Kafka Server
+  mcp-kafka:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    ports:
+      - "8002:8002"
+    environment:
+      - MCP_SERVER_TYPE=kafka
+      - MCP_SERVER_PORT=8002
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+    volumes:
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    command: ["python", "-m", "mcp.kafka_mcp_server"]
+    restart: unless-stopped
+
+  # MCP AWS Server
+  mcp-aws:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    ports:
+      - "8003:8003"
+    environment:
+      - MCP_SERVER_TYPE=aws
+      - MCP_SERVER_PORT=8003
+    volumes:
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    command: ["python", "-m", "mcp.aws_mcp_server"]
     restart: unless-stopped
 
   postgres:

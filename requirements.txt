@@ -20,11 +20,19 @@ matplotlib>=3.7.0
 seaborn>=0.12.0
 python-dotenv>=1.0.0
 loguru>=0.7.0
+
+# Testing dependencies
 pytest>=7.0.0
 pytest-cov>=4.0.0
 pytest-asyncio>=0.21.0
+pytest-mock>=3.10.0
+moto[s3,lambda,ssm]>=4.2.0
+
+# Code quality
 black>=23.0.0
 flake8>=6.0.0
 mypy>=1.0.0
 pre-commit>=3.0.0
+
+# Additional dependencies
 langchain>=0.1.0
