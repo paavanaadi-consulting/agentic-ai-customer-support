@@ -1,26 +1,17 @@
-# Dockerfile for MCP Servers
+# Dockerfile for the MCP services (mcp-database, mcp-kafka, mcp-aws)
 FROM python:3.11-slim
 
+# Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Install git client, which is required for installing packages from git repositories
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
+# Copy requirements and install dependencies
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy the rest of the application code
 COPY . .
 
-# Create logs directory
-RUN mkdir -p /app/logs
-
-# Expose default MCP server ports
-EXPOSE 8001 8002 8003
-
-# Default command (will be overridden in docker-compose)
-CMD ["python", "-m", "mcp.database_mcp_server"]
+# The command to run the services is specified in docker-compose.yml, so no CMD is needed here.

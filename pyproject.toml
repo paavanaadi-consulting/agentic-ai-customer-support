@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-ai-customer-support"
+version = "1.0.0"
+authors = [
+  { name="Your Name", email="your.email@example.com" },
+]
+description = "A genetic AI system for customer support using multiple AI agents with external MCP server integration"
+readme = "readme.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    # Core AI model dependencies
+    "anthropic>=0.25.0",
+    "google-generativeai>=0.3.0",
+    "openai>=1.0.0",
+    
+    # Database dependencies
+    "psycopg2-binary>=2.9.0",
+    
+    # Vector database and ML
+    "qdrant-client>=1.6.0",
+    "sentence-transformers>=2.2.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.3.0",
+    
+    # PDF processing
+    "PyPDF2>=3.0.0",
+    
+    # Web framework
+    "fastapi>=0.100.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    
+    # Environment and configuration
+    "python-dotenv>=1.0.0",
+
+    # Git dependencies
+    "postgres-mcp @ git+https://github.com/crystaldba/postgres-mcp.git",
+    "kafka-mcp-server @ git+https://github.com/pavanjava/kafka_mcp_server.git",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+    "moto[s3,lambda,ssm]>=4.2.0",
+]
+mcp = [ "websockets>=11.0.0" ]
+kafka-fallback = [ "kafka-python>=2.0.0" ]
+aws-fallback = [ "boto3>=1.26.0" ]
+server = [
+    "uvicorn>=0.20.0",
+    "python-multipart>=0.0.6",
+]
+visualization = [
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+]
+logging = [ "loguru>=0.7.0" ]
+all = [
+    "agentic-ai-customer-support[mcp,kafka-fallback,aws-fallback,server,visualization,logging]",
+]
+
+[project.scripts]
+genetic-ai-support = "main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
