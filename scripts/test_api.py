@@ -2,9 +2,9 @@
 Test script to send a sample query to the API.
 """
 import requests
-from config.settings import settings
+from config.env_settings import env_settings
 
-API_URL = f"http://{settings.API_HOST}:{settings.API_PORT}/query"
+API_URL = f"http://{env_settings.API_HOST}:{env_settings.API_PORT}/api/query"
 
 def main():
     payload = {

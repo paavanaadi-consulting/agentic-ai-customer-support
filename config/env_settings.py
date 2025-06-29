@@ -2,7 +2,7 @@
 Unified environment-specific settings loader for the project.
 """
 import os
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
 # Load .env file if present
