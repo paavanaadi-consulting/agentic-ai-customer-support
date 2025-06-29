@@ -1,11 +1,11 @@
 # Agentic AI Customer Support System
 
-A sophisticated multi-agent AI system that evolves and adapts to provide better customer service through agentic workflows, genetic algorithms, and advanced database integration. The system now features comprehensive **Model Context Protocol (MCP)** integration for modular, scalable data and service access.
+A sophisticated multi-agent AI system that evolves and adapts to provide better customer service through agentic workflows, genetic algorithms, and advanced database integration. The system features comprehensive **Model Context Protocol (MCP)** integration using external MCP servers for scalable, maintainable data and service access.
 
 ## 🚀 Features
 
 - **A2A Protocol**: Modular agents communicate directly via WebSockets for scalable, decoupled orchestration
-- **MCP Integration**: Model Context Protocol servers for database, Kafka, and AWS operations
+- **External MCP Integration**: Uses official AWS Labs and community MCP servers instead of custom implementations
 - **Multi-Agent Architecture**: Modular agents (Claude, Gemini, GPT) with database context
 - **Dynamic LLM Selection**: Agents can use OpenAI, Gemini, or Claude LLMs, with provider/model/API key set via config or per-request
 - **Genetic Algorithm Evolution**: Agents evolve strategies for better performance
@@ -19,52 +19,66 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 
 ---
 
-## 🆕 Key Updates (2025)
-
-- **MCP Integration**: Full Model Context Protocol implementation with dedicated servers for database, Kafka, and AWS operations
-- **All agents now support dynamic LLM selection (OpenAI, Gemini, Claude) for all LLM operations**
-- **Prompt templates are used for each agent capability (intent, knowledge, response, etc)**
-- **All A2A agents accept `mcp_clients` for context-aware LLM prompting (Postgres, Kafka, AWS, etc)**
-- **Comprehensive unit tests for all MCP servers and clients**
-- **Docker Compose setup with MCP servers as separate services**
-
----
-
 ## 🔧 Model Context Protocol (MCP) Architecture
 
-The system uses MCP servers to provide modular access to various services:
+The system uses external MCP servers through wrapper interfaces for modular service access:
 
-### MCP Servers
-- **Database MCP Wrapper** (`mcp/postgres_mcp_wrapper.py`): External postgres-mcp package with fallback
-- **Kafka MCP Wrapper** (`mcp/kafka_mcp_wrapper.py`): Apache Kafka messaging with external package integration
-- **AWS MCP Wrapper** (`mcp/aws_mcp_wrapper.py`): External AWS MCP packages with fallback
+### External MCP Packages
+- **PostgreSQL**: `postgres-mcp` package from community (crystaldba/postgres-mcp)
+- **Kafka**: `kafka-mcp-server` package from community (pavanjava/kafka_mcp_server)
+- **AWS Services**: AWS Labs MCP packages (lambda-tool, core, documentation servers)
+
+### MCP Wrappers
+- **Postgres MCP Wrapper** (`mcp/postgres_mcp_wrapper.py`): External postgres-mcp package integration
+- **Kafka MCP Wrapper** (`mcp/kafka_mcp_wrapper.py`): External kafka-mcp-server integration
+- **AWS MCP Wrapper** (`mcp/aws_mcp_wrapper.py`): External AWS MCP packages integration
 
 ### MCP Client Manager
 - **MCP Client** (`mcp/mcp_client.py`): Unified interface for MCP server communication
-- **Client Manager**: Manages multiple MCP connections for agents
+- **Base MCP Server** (`mcp/base_mcp_server.py`): Common base class for wrappers
 
 ### Quick MCP Example
 ```python
-from mcp.mcp_client import MCPClientManager
+from mcp.postgres_mcp_wrapper import PostgresMCPWrapper
+from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
+from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
 
-# Initialize MCP client manager
-mcp_manager = MCPClientManager()
+# Initialize MCP wrappers with external packages
+db_wrapper = PostgresMCPWrapper("postgresql://user:pass@localhost:5432/db")
+await db_wrapper.initialize()
 
-# Connect to MCP servers
-await mcp_manager.add_client("mcp_database", "ws://localhost:8001")
-await mcp_manager.add_client("mcp_kafka", "ws://localhost:8002")
-await mcp_manager.add_client("mcp_aws", "ws://localhost:8003")
+kafka_config = ExternalKafkaMCPConfig(
+    bootstrap_servers="localhost:9092",
+    topic_name="customer-queries"
+)
+kafka_wrapper = KafkaMCPWrapper(kafka_config)
+await kafka_wrapper.initialize()
 
-# Use MCP tools
-customer_data = await mcp_manager.call_tool("mcp_database", "get_customer_context", {
-    "customer_id": "12345"
+aws_config = ExternalMCPConfig(
+    aws_profile="default",
+    aws_region="us-east-1"
+)
+aws_wrapper = AWSMCPWrapper(aws_config)
+await aws_wrapper.initialize()
+
+# Use MCP tools through wrappers
+customer_data = await db_wrapper.call_tool("query", {
+    "sql": "SELECT * FROM customers WHERE customer_id = %s",
+    "params": ["12345"]
 })
 
 # Publish to Kafka
-await mcp_manager.call_tool("mcp_kafka", "publish_message", {
+await kafka_wrapper.call_tool("kafka-publish", {
     "topic": "customer-queries",
     "message": {"query": "How to reset password?", "customer_id": "12345"}
 })
+
+# Call AWS Lambda function
+result = await aws_wrapper.call_tool("invoke_lambda", {
+    "function_name": "process-customer-query",
+    "payload": {"customer_id": "12345"}
+})
+```
 ```
 
 ---
@@ -76,33 +90,33 @@ from a2a_protocol.a2a_query_agent import A2AQueryAgent
 from a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
 from a2a_protocol.a2a_response_agent import A2AResponseAgent
 from a2a_protocol.a2a_coordinator import A2ACoordinator
+from mcp.mcp_client import MCPClient
 
-# MCP configuration
-mcp_config = {
-    "servers": {
-        "mcp_database": {"uri": "ws://localhost:8001"},
-        "mcp_kafka": {"uri": "ws://localhost:8002"},
-        "mcp_aws": {"uri": "ws://localhost:8003"}
-    }
-}
+# Initialize MCP client with external wrappers
+mcp_client = MCPClient()
+
+# Add external MCP servers
+await mcp_client.add_server("postgres", PostgresMCPWrapper("postgresql://..."))
+await mcp_client.add_server("kafka", KafkaMCPWrapper(kafka_config))
+await mcp_client.add_server("aws", AWSMCPWrapper(aws_config))
 
 # Initialize agents with MCP integration
 query_agent = A2AQueryAgent(
     agent_id="query-agent-1", 
     agent_type="query",
-    mcp_config=mcp_config
+    mcp_clients={"main": mcp_client}
 )
 
 knowledge_agent = A2AKnowledgeAgent(
     agent_id="knowledge-agent-1",
     agent_type="knowledge", 
-    mcp_config=mcp_config
+    mcp_clients={"main": mcp_client}
 )
 
 response_agent = A2AResponseAgent(
     agent_id="response-agent-1",
     agent_type="response",
-    mcp_config=mcp_config
+    mcp_clients={"main": mcp_client}
 )
 
 coordinator = A2ACoordinator()
@@ -180,24 +194,39 @@ asyncio.run(run_workflow())
 - [Contributing](#contributing)
 - [License](#license)
 
+---
+
 ## 🛠 Installation
 
 ### Prerequisites
 
 - Python 3.8+
 - PostgreSQL
-- Apache Kafka
+- Apache Kafka (optional - external MCP package available)
 - Vector Database (Qdrant/Weaviate)
 - API Keys for Claude, Gemini, and OpenAI
+- uvx (recommended for external MCP package management)
 
 ### Quick Start
 
 ```bash
 git clone https://github.com/yourusername/agentic-ai-customer-support.git
 cd agentic-ai-customer-support
-pip install -r requirements.txt
+
+# Install core dependencies
+pip install -e .
+
+# Install external MCP packages
+./scripts/install_external_mcp.sh
+
+# Configure environment
 cp .env.example .env
 # Edit .env with your configuration
+
+# Initialize database
+python scripts/init_db.py
+
+# Run the system
 python main.py
 ```
 
@@ -217,29 +246,59 @@ python main.py
 
 3. **Install dependencies**
    ```bash
-   pip install -r requirements.txt
+   # Core installation
+   pip install -e .
+   
+   # Optional: Install with specific features
+   pip install -e .[mcp]           # MCP communication
+   pip install -e .[server]        # Web server
+   pip install -e .[visualization] # Data visualization
+   pip install -e .[all]           # All optional features
+   
+   # Development installation
+   pip install -e .[dev]
    ```
 
-4. **Set up environment variables**
+4. **Install external MCP packages**
+   ```bash
+   # Automated installation
+   ./scripts/install_external_mcp.sh
+   
+   # Manual installation
+   uvx install postgres-mcp@git+https://github.com/crystaldba/postgres-mcp.git
+   uvx install kafka-mcp-server@git+https://github.com/pavanjava/kafka_mcp_server.git
+   uvx install awslabs.lambda-tool-mcp-server
+   uvx install awslabs.core-mcp-server
+   uvx install awslabs.aws-documentation-mcp-server
+   ```
+
+5. **Set up environment variables**
    ```bash
    cp .env.example .env
    ```
    Edit `.env` with your API keys and database configurations.
 
-5. **Initialize database**
+5. **Configure external MCP packages**
+   ```bash
+   # Copy MCP configuration template
+   cp config/aws_mcp.env.example config/aws_mcp.env
+   # Edit with your AWS credentials and preferences
+   ```
+
+6. **Initialize database**
    ```bash
    python scripts/init_db.py
    # Or use the provided SQL schema:
    psql -U <user> -d <db> -f data/postgres_schema.sql
    ```
 
-6. **Seed database and generate sample data**
+7. **Seed database and generate sample data**
    ```bash
    python scripts/seed_db.py
    python data/generate_postgres_sample_data.py
    ```
 
-7. **(Optional) Import/Export Data**
+8. **(Optional) Import/Export Data**
    ```bash
    python scripts/import_data.py
    python scripts/export_data.py
@@ -248,9 +307,10 @@ python main.py
 ## ⚙️ Configuration
 
 - All environment-specific settings are managed in `config/env_settings.py` and `.env`.
+- External MCP packages configured in `config/aws_mcp.env` and similar files.
 - Supports development, staging, and production environments.
 
-Create a `.env` file with the following variables:
+### Main Configuration (`.env`)
 
 ```env
 # AI Model API Keys
@@ -265,7 +325,7 @@ DB_USER=admin
 DB_PASSWORD=password
 DB_NAME=customer_support
 
-# Kafka Configuration
+# Kafka Configuration (optional - external MCP available)
 KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 KAFKA_TOPICS=customer-queries,feedback-events
 
@@ -282,6 +342,53 @@ MAX_GENERATIONS=100
 
 # Environment
 ENV=development  # or production, staging, etc.
+```
+
+### External MCP Configuration (`config/aws_mcp.env`)
+
+```env
+# AWS Credentials and Region
+AWS_PROFILE=default
+AWS_REGION=us-east-1
+
+# AWS MCP Server Settings
+AWS_MCP_USE_EXTERNAL=true
+AWS_MCP_USE_UVX=true
+
+# MCP Server Enablement
+LAMBDA_TOOL_MCP_ENABLED=true
+CORE_MCP_ENABLED=true
+DOCUMENTATION_MCP_ENABLED=true
+
+# Logging
+FASTMCP_LOG_LEVEL=ERROR
+```
+
+### Installation Options
+
+The system supports flexible installation options:
+
+```bash
+# Minimal installation (core only)
+pip install -e .
+
+# With MCP support
+pip install -e .[mcp]
+
+# With web server
+pip install -e .[server]
+
+# With data visualization
+pip install -e .[visualization]
+
+# With fallback implementations (if needed - deprecated)
+pip install -e .[kafka-fallback,aws-fallback]
+
+# Everything
+pip install -e .[all]
+
+# Development
+pip install -e .[dev]
 ```
 
 ## 🚀 Usage
@@ -358,6 +465,7 @@ agentic-ai-customer-support/
 ├── main.py
 ├── config/
 │   ├── env_settings.py  # Unified, environment-specific config
+│   ├── aws_mcp.env     # External AWS MCP configuration
 │   └── ...
 ├── core/
 │   ├── evolution_engine.py
@@ -367,17 +475,25 @@ agentic-ai-customer-support/
 │   ├── knowledge_agent.py
 │   ├── response_agent.py
 │   └── ...
+├── a2a_protocol/
+│   ├── base_a2a_agent.py
+│   ├── a2a_query_agent.py
+│   ├── a2a_knowledge_agent.py
+│   ├── a2a_response_agent.py
+│   └── a2a_coordinator.py
 ├── data_sources/
 │   ├── pdf_processor.py
 │   ├── rdbms_connector.py
 │   ├── vector_db_client.py
 │   ├── kafka_consumer.py
 │   └── ...
-├── mcp_servers/
-│   ├── postgres_mcp.py
-│   ├── aws_mcp.py
-│   ├── kafka_mcp.py
-│   └── ...
+├── mcp/
+│   ├── base_mcp_server.py      # Base class for wrappers
+│   ├── postgres_mcp_wrapper.py # External Postgres MCP wrapper
+│   ├── kafka_mcp_wrapper.py   # External Kafka MCP wrapper
+│   ├── aws_mcp_wrapper.py     # External AWS MCP wrapper
+│   ├── mcp_client.py          # MCP client manager
+│   └── database_mcp_server.py # Internal database MCP server
 ├── scripts/
 │   ├── init_db.py
 │   ├── seed_db.py
@@ -385,6 +501,7 @@ agentic-ai-customer-support/
 │   ├── export_data.py
 │   ├── cleanup.py
 │   ├── health_check.py
+│   ├── install_external_mcp.sh
 │   └── test_api.py
 ├── data/
 │   ├── postgres_schema.sql  # Full Postgres schema
@@ -393,6 +510,10 @@ agentic-ai-customer-support/
 ├── api/
 │   ├── routes.py
 │   ├── schemas.py
+│   └── ...
+├── examples/
+│   ├── mcp_integration_example.py
+│   ├── a2a_usage_example.py
 │   └── ...
 ├── utils/
 │   └── logger.py
@@ -407,6 +528,7 @@ agentic-ai-customer-support/
 - `scripts/cleanup.py`: Clean up test or old data
 - `scripts/health_check.py`: System and DB health checks
 - `scripts/test_api.py`: Test API endpoints
+- `scripts/install_external_mcp.sh`: Install external MCP packages
 - `data/generate_postgres_sample_data.py`: Generate sample data for Postgres
 
 ## 🐳 Docker Compose
@@ -429,13 +551,35 @@ A full Postgres schema is provided in `data/postgres_schema.sql` for customer su
 - System and database health checks via `scripts/health_check.py` and dashboard
 - Enhanced dashboard at `http://localhost:8000/dashboard` shows agent, system, and DB metrics
 
+## 📚 Documentation
+
+The system includes comprehensive documentation:
+
+### Core Documentation
+- `docs/README.md`: Overview and getting started
+- `docs/architecture.md`: System architecture details
+- `docs/setup_guide.md`: Detailed setup instructions
+- `docs/api_reference.md`: API documentation
+
+### MCP Integration Documentation
+- `docs/mcp_integration.md`: Complete MCP integration guide
+- `docs/EXTERNAL_POSTGRES_MCP.md`: PostgreSQL MCP server details
+- `docs/EXTERNAL_KAFKA_MCP.md`: Kafka MCP server details  
+- `docs/EXTERNAL_AWS_MCP.md`: AWS MCP server details
+
+### Examples and Testing
+- `examples/mcp_integration_example.py`: MCP usage examples
+- `examples/a2a_usage_example.py`: A2A protocol examples
+- Various test files demonstrating functionality
+
+---
+
+---
+
 ## 📚 API Documentation
 
 ### REST API Endpoints
-
 #### Process Query
-```http
-POST /api/query
 Content-Type: application/json
 
 {
@@ -743,10 +887,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: [docs/](docs/)
+- **Documentation**: Complete documentation in [docs/](docs/) directory
+- **MCP Integration**: See [docs/mcp_integration.md](docs/mcp_integration.md) for detailed MCP usage
+- **External MCP Guides**: Individual guides for each external MCP package in docs/
+- **Examples**: Working examples in [examples/](examples/) directory  
 - **Issues**: [GitHub Issues](https://github.com/yourusername/agentic-ai-customer-support/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/agentic-ai-customer-support/discussions)
 - **Email**: support@yourcompany.com
+
+### Quick Links
+- [Migration Guide](docs/mcp_integration.md#migration-from-custom-mcp-servers)
+- [External MCP Setup](scripts/install_external_mcp.sh)
+- [MCP Integration Examples](examples/mcp_integration_example.py)
+- [A2A Protocol Examples](examples/a2a_usage_example.py)
 
 ---
 
