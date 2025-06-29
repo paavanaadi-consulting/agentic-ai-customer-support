@@ -1,14 +1,25 @@
 # Dockerfile for the main application (agentic-ai-customer-support service)
-FROM python:3.11-slim
+# Using Jupyter scipy-notebook as base image with pre-installed scientific packages
+FROM jupyter/scipy-notebook:latest
 
-# Set the working directory in the container
+# Switch to root to install system dependencies
+USER root
+
+# Install minimal system dependencies 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Switch back to the default user
+USER $NB_UID
+
+# Set the working directory
 WORKDIR /app
 
-# Install git client, which is required for installing packages from git repositories
-RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements and install dependencies first to leverage Docker layer caching
+# Copy requirements (excluding the packages we already installed)
 COPY requirements.txt ./
+
+# Install remaining dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code

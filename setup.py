@@ -38,7 +38,7 @@ setup(
         "qdrant-client>=1.6.0",
         "sentence-transformers>=2.2.0",
         "numpy>=1.24.0",
-        "scikit-learn>=1.3.0",
+        # Note: scikit-learn moved to optional extras
         
         # PDF processing
         "PyPDF2>=3.0.0",
@@ -78,11 +78,9 @@ setup(
             "uvicorn>=0.20.0",
             "python-multipart>=0.0.6",
         ],
-        "visualization": [
-            # Data visualization dependencies
-            "pandas>=2.0.0",
-            "matplotlib>=3.7.0",
-            "seaborn>=0.12.0",
+        "pdf-search": [
+            # Advanced PDF search with TF-IDF
+            "scikit-learn>=1.3.0",
         ],
         "logging": [
             # Enhanced logging
@@ -94,6 +92,9 @@ setup(
             "kafka-python>=2.0.0",
             "boto3>=1.26.0",
             "uvicorn>=0.20.0",
+            "python-multipart>=0.0.6",
+            "loguru>=0.7.0",
+            "scikit-learn>=1.3.0",
             "python-multipart>=0.0.6",
             "pandas>=2.0.0",
             "matplotlib>=3.7.0",

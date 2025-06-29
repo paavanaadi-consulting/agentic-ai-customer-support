@@ -6,8 +6,8 @@ psycopg2-binary
 boto3
 kafka-python
 qdrant-client>=1.6.0
-numpy>=1.24.0
-pandas>=2.0.0
+numpy>=1.24.0  # Pre-installed in jupyter/scipy-notebook base image
+pandas>=2.0.0  # Pre-installed in jupyter/scipy-notebook base image
 fastapi>=0.100.0
 uvicorn>=0.20.0
 pydantic>=2.0.0
@@ -17,9 +17,7 @@ websockets>=11.0
 aiohttp>=3.8.0
 PyPDF2>=3.0.0
 sentence-transformers>=2.2.0
-scikit-learn>=1.3.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
+scikit-learn>=1.3.0  # Pre-installed in jupyter/scipy-notebook base image
 python-dotenv>=1.0.0
 loguru>=0.7.0
 
@@ -28,6 +26,9 @@ postgres-mcp @ git+https://github.com/crystaldba/postgres-mcp.git
 
 # Note: Kafka MCP is handled via Docker using Confluent's mcp-confluent server (Node.js)
 # See docker-compose.yml for the mcp-kafka-confluent service
+
+# Note: numpy, pandas, scikit-learn are pre-installed in jupyter/scipy-notebook base image
+# but are included here for version constraints and local development compatibility
 
 # External AWS MCP Packages (optional - can be installed via uvx)
 # These are commented out as they're typically installed via uvx

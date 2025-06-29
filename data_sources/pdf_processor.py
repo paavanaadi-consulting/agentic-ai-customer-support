@@ -188,7 +188,7 @@ class PDFProcessor:
         except Exception as e:
             self.logger.error(f"Error searching documents: {str(e)}")
             return []
-    
+
     async def get_document_summary(self, document_name: str) -> Dict[str, Any]:
         """Get summary information about a specific document"""
         if document_name not in self.documents:
