@@ -97,7 +97,6 @@ uvx install git+https://github.com/pavanjava/kafka_mcp_server.git
 ### Option 3: Via requirements.txt
 
 Already included in our `requirements.txt`:
-
 ```
 kafka-mcp-server @ git+https://github.com/pavanjava/kafka_mcp_server.git
 ```

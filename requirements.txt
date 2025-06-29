@@ -24,7 +24,7 @@ loguru>=0.7.0
 
 # MCP Packages
 postgres-mcp @ git+https://github.com/crystaldba/postgres-mcp.git
-kafka-mcp-server @ git+https://github.com/pavanjava/kafka_mcp_server.git
+kafka_mcp_server @ git+https://github.com/pavanjava/kafka_mcp_server.git
 
 # External AWS MCP Packages (optional - can be installed via uvx)
 # These are commented out as they're typically installed via uvx
