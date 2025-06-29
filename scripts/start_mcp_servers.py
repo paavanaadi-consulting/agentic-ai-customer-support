@@ -22,9 +22,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Import MCP servers
-from mcp.database_mcp_server import DatabaseMCPServer
-from mcp.kafka_mcp_server import KafkaMCPServer
-from mcp.aws_mcp_server import AWSMCPServer
+from mcp.postgres_mcp_wrapper import PostgresMCPWrapper
+from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
+from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
 from data_sources.rdbms_connector import RDBMSConnector
 
 
@@ -84,12 +84,12 @@ class MCPServerManager:
             db_connector = RDBMSConnector()
             await db_connector.connect()
             
-            # Create and start server
-            server = DatabaseMCPServer(db_connector)
-            await server.start()
+            # Create and start wrapper
+            server = PostgresMCPWrapper()
+            await server.initialize()
             
             self.servers["database"] = server
-            logger.info(f"Database MCP server started on port {self.config['database']['port']}")
+            logger.info(f"Database MCP wrapper started on port {self.config['database']['port']}")
             return True
             
         except Exception as e:
@@ -105,7 +105,12 @@ class MCPServerManager:
         try:
             logger.info("Starting Kafka MCP server...")
             
-            server = KafkaMCPServer(self.config["kafka"]["bootstrap_servers"])
+            kafka_config = ExternalKafkaMCPConfig(
+                bootstrap_servers=self.config["kafka"]["bootstrap_servers"],
+                topic_name=self.config["kafka"].get("topic_name", "default-topic"),
+                group_id=self.config["kafka"].get("group_id", "mcp-group")
+            )
+            server = KafkaMCPWrapper(kafka_config)
             await server.start()
             
             self.servers["kafka"] = server
@@ -125,15 +130,15 @@ class MCPServerManager:
         try:
             logger.info("Starting AWS MCP server...")
             
-            server = AWSMCPServer(
-                aws_access_key_id=self.config["aws"]["access_key_id"],
-                aws_secret_access_key=self.config["aws"]["secret_access_key"],
-                region_name=self.config["aws"]["region"]
+            aws_config = ExternalMCPConfig(
+                aws_profile=self.config["aws"].get("profile", "default"),
+                aws_region=self.config["aws"]["region"]
             )
-            await server.start()
+            server = AWSMCPWrapper(aws_config)
+            await server.initialize()
             
             self.servers["aws"] = server
-            logger.info(f"AWS MCP server started on port {self.config['aws']['port']}")
+            logger.info(f"AWS MCP wrapper started on port {self.config['aws']['port']}")
             return True
             
         except Exception as e:

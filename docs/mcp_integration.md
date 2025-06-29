@@ -49,15 +49,19 @@ articles = await mcp_client.call_tool("mcp_database", "search_knowledge_base", {
 })
 ```
 
-### 2. Kafka MCP Server (`kafka_mcp_server.py`)
+### 2. Kafka MCP Wrapper (`kafka_mcp_wrapper.py`)
 
-**Capabilities**: Apache Kafka operations for real-time messaging
+**Capabilities**: Interface to external Kafka MCP server with comprehensive features and fallback
 
-**Tools**:
-- `publish_message`: Send messages to Kafka topics
-- `consume_messages`: Consume messages from topics
-- `get_topic_metadata`: Get topic information
-- `create_topic`: Create new topics
+**Tools** (External Server):
+- `kafka-publish`: Send messages to Kafka topics
+- `kafka-consume`: Consume messages from topics
+- `create-topic`: Create new topics
+- `delete-topic`: Delete topics
+- `list-topics`: List all topics
+- `topic-config`: Get/set topic configuration
+- `cluster-health`: Check cluster health
+- `cluster-metadata`: Get cluster metadata
 - `list_topics`: List available topics
 
 **Resources**:
@@ -205,29 +209,33 @@ AWS_DEFAULT_REGION=us-east-1
 ```python
 # Start all MCP servers
 import asyncio
-from mcp.database_mcp_server import DatabaseMCPServer
-from mcp.kafka_mcp_server import KafkaMCPServer
-from mcp.aws_mcp_server import AWSMCPServer
+from mcp.postgres_mcp_wrapper import PostgresMCPWrapper
+from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
+from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
 from data_sources.rdbms_connector import RDBMSConnector
 
 async def start_mcp_servers():
     # Database MCP
-    db_connector = RDBMSConnector()
-    await db_connector.connect()
-    db_server = DatabaseMCPServer(db_connector)
-    await db_server.start()
+    db_connection_string = "postgresql://admin:password@localhost:5432/customer_support"
+    db_server = PostgresMCPWrapper(db_connection_string)
+    await db_server.initialize()
     
     # Kafka MCP
-    kafka_server = KafkaMCPServer("localhost:9092")
-    await kafka_server.start()
+    kafka_config = ExternalKafkaMCPConfig(
+        bootstrap_servers="localhost:9092",
+        topic_name="customer-support",
+        group_id="support-agents"
+    )
+    kafka_server = KafkaMCPWrapper(kafka_config)
+    await kafka_server.initialize()
     
     # AWS MCP
-    aws_server = AWSMCPServer(
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-        region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1")
+    aws_config = ExternalMCPConfig(
+        aws_profile="default",
+        aws_region="us-east-1"
     )
-    await aws_server.start()
+    aws_server = AWSMCPWrapper(aws_config)
+    await aws_server.initialize()
     
     print("All MCP servers started successfully")
 

@@ -21,6 +21,17 @@ seaborn>=0.12.0
 python-dotenv>=1.0.0
 loguru>=0.7.0
 
+# MCP Packages
+postgres-mcp @ git+https://github.com/crystaldba/postgres-mcp.git
+kafka-mcp-server @ git+https://github.com/pavanjava/kafka_mcp_server.git
+
+# External AWS MCP Packages (optional - can be installed via uvx)
+# These are commented out as they're typically installed via uvx
+# Uncomment if you want to install them in the local environment
+# awslabs.lambda-tool-mcp-server
+# awslabs.core-mcp-server 
+# awslabs.aws-documentation-mcp-server
+
 # Testing dependencies
 pytest>=7.0.0
 pytest-cov>=4.0.0

@@ -69,7 +69,7 @@ services:
       - ./logs:/app/logs
     env_file:
       - .env
-    command: ["python", "-m", "mcp.database_mcp_server"]
+    command: ["python", "-c", "from mcp.postgres_mcp_wrapper import PostgresMCPWrapper; import asyncio; asyncio.run(PostgresMCPWrapper().start_as_server())"]
     restart: unless-stopped
 
   # MCP Kafka Server
@@ -89,7 +89,7 @@ services:
       - ./logs:/app/logs
     env_file:
       - .env
-    command: ["python", "-m", "mcp.kafka_mcp_server"]
+    command: ["python", "-c", "from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig; import asyncio; config = ExternalKafkaMCPConfig(bootstrap_servers='kafka:9092'); asyncio.run(KafkaMCPWrapper(config).start_as_server())"]
     restart: unless-stopped
 
   # MCP AWS Server
@@ -106,7 +106,7 @@ services:
       - ./logs:/app/logs
     env_file:
       - .env
-    command: ["python", "-m", "mcp.aws_mcp_server"]
+    command: ["python", "-c", "from mcp.aws_mcp_wrapper import AWSMCPWrapper; import asyncio; asyncio.run(AWSMCPWrapper().start_as_server())"]
     restart: unless-stopped
 
   postgres:

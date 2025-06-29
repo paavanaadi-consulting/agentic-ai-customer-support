@@ -66,53 +66,66 @@ class A2ACoordinator(A2AAgent):
                 'mcp_clients': mcp_clients,
                 'customer_id': query_data.get('customer_id'),
             })
-            # Knowledge Agent
-            knowledge_agent = A2AKnowledgeAgent(
-                api_key=api_key or CONFIG['ai_models']['gemini_api_key'],
-                llm_provider=llm_provider or 'gemini',
-                llm_model=llm_model or 'gemini-pro',
-                mcp_clients=mcp_clients
-            )
-            knowledge_result = await knowledge_agent.process_task({
-                'task_type': 'knowledge_search',
-                'input_data': {'query': query_data.get('query', ''), 'context': context},
-                'capability': 'knowledge_search',
-                'llm_provider': llm_provider or 'gemini',
-                'llm_model': llm_model or 'gemini-pro',
-                'api_key': api_key or CONFIG['ai_models']['gemini_api_key'],
-                'mcp_clients': mcp_clients,
-                'customer_id': query_data.get('customer_id'),
-            })
-            # Response Agent
-            response_agent = A2AResponseAgent(
-                api_key=api_key or CONFIG['ai_models']['claude_api_key'],
-                llm_provider=llm_provider or 'claude',
-                llm_model=llm_model or 'claude-3-opus-20240229',
-                mcp_clients=mcp_clients
-            )
-            response_result = await response_agent.process_task({
-                'task_type': 'generate_response',
-                'query_analysis': query_result,
-                'knowledge_result': knowledge_result,
-                'capability': 'generate_response',
-                'llm_provider': llm_provider or 'claude',
-                'llm_model': llm_model or 'claude-3-opus-20240229',
-                'api_key': api_key or CONFIG['ai_models']['claude_api_key'],
-                'mcp_clients': mcp_clients,
-                'customer_id': query_data.get('customer_id'),
-                'context': context,
-            })
-            final_result = {
-                'workflow_id': workflow_id,
-                'success': True,
-                'query_analysis': query_result,
-                'knowledge_result': knowledge_result,
-                'response_result': response_result,
-                'total_agents_used': 3,
-                'coordination_overhead': 'minimal'
-            }
-            self.logger.info(f"Completed support workflow {workflow_id}")
-            return final_result
+
+            try:
+                # Knowledge Agent
+                knowledge_agent = A2AKnowledgeAgent(
+                    api_key=api_key or CONFIG['ai_models']['gemini_api_key'],
+                    llm_provider=llm_provider or 'gemini',
+                    llm_model=llm_model or 'gemini-pro',
+                    mcp_clients=mcp_clients
+                )
+                knowledge_result = await knowledge_agent.process_task({
+                    'task_type': 'knowledge_search',
+                    'input_data': {'query': query_data.get('query', ''), 'context': context},
+                    'capability': 'knowledge_search',
+                    'llm_provider': llm_provider or 'gemini',
+                    'llm_model': llm_model or 'gemini-pro',
+                    'api_key': api_key or CONFIG['ai_models']['gemini_api_key'],
+                    'mcp_clients': mcp_clients,
+                    'customer_id': query_data.get('customer_id'),
+                })
+
+                # Response Agent
+                response_agent = A2AResponseAgent(
+                    api_key=api_key or CONFIG['ai_models']['claude_api_key'],
+                    llm_provider=llm_provider or 'claude',
+                    llm_model=llm_model or 'claude-3-opus-20240229',
+                    mcp_clients=mcp_clients
+                )
+                response_result = await response_agent.process_task({
+                    'task_type': 'generate_response',
+                    'query_analysis': query_result,
+                    'knowledge_result': knowledge_result,
+                    'capability': 'generate_response',
+                    'llm_provider': llm_provider or 'claude',
+                    'llm_model': llm_model or 'claude-3-opus-20240229',
+                    'api_key': api_key or CONFIG['ai_models']['claude_api_key'],
+                    'mcp_clients': mcp_clients,
+                    'customer_id': query_data.get('customer_id'),
+                    'context': context,
+                })
+
+                final_result = {
+                    'workflow_id': workflow_id,
+                    'success': True,
+                    'query_analysis': query_result,
+                    'knowledge_result': knowledge_result,
+                    'response_result': response_result,
+                    'total_agents_used': 3,
+                    'coordination_overhead': 'minimal'
+                }
+                self.logger.info(f"Completed support workflow {workflow_id}")
+                return final_result
+
+            except Exception as agent_error:
+                self.logger.error(f"Error in agent processing for workflow {workflow_id}: {agent_error}")
+                return {
+                    'workflow_id': workflow_id,
+                    'success': False,
+                    'error': f"Agent processing error: {str(agent_error)}"
+                }
+
         except Exception as e:
             self.logger.error(f"Workflow {workflow_id} failed: {e}")
             return {

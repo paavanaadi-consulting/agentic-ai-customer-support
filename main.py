@@ -20,11 +20,10 @@ from integration.database_service import DatabaseService
 from data_sources.pdf_processor import PDFProcessor
 from data_sources.vector_db_client import VectorDBClient
 from data_sources.kafka_consumer import KafkaConsumer
-from mcp_servers.server_manager import MCPServerManager
-from mcp_servers.mcp_client import MCPClient
-from mcp_servers.postgres_mcp import PostgresMCP
-from mcp_servers.kafka_mcp import KafkaMCP
-from mcp_servers.aws_mcp import AWSMCP
+from mcp.mcp_client import MCPClient
+from mcp.postgres_mcp_wrapper import PostgresMCPWrapper
+from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
+from mcp.aws_mcp_wrapper import AWSMCPWrapper
 from utils.logger import setup_logger
 from api.routes import create_app
 
@@ -37,8 +36,8 @@ class EnhancedGeneticAISupport:
         self.data_sources = {}
         self.database_service = None
         self.evolution_engine = None
-        self.mcp_manager = None
-        self.mcp_clients = {}  # Store MCP clients for all connectors
+        self.mcp_services = {}  # Store MCP services for all connectors
+        self.mcp_services = {}  # Store MCP services for all connectors
         self.initialized = False
     
     async def initialize(self):
@@ -59,10 +58,10 @@ class EnhancedGeneticAISupport:
             await self._initialize_evolution_engine()
             
             # Initialize MCP server manager
-            await self._initialize_mcp_manager()
+            await self._initialize_mcp_services()
             
             # Initialize MCP clients for connectors
-            await self._initialize_mcp_clients()
+            await self._initialize_mcp_services()
             
             self.initialized = True
             self.logger.info("Enhanced system initialization complete!")
@@ -129,30 +128,49 @@ class EnhancedGeneticAISupport:
         await self.evolution_engine.initialize()
         self.logger.info("Evolution engine initialized successfully")
     
-    async def _initialize_mcp_manager(self):
-        """Initialize MCP server manager"""
-        self.mcp_manager = MCPServerManager()
-        await self.mcp_manager.initialize()
-        self.logger.info("MCP server manager initialized successfully")
-    
-    async def _initialize_mcp_clients(self):
+    async def _initialize_mcp_services(self):
         """Initialize all MCP connectors and wrap with MCPClient"""
-        self.mcp_clients = {}
-        # Example configs; replace with your actual config structure
+        # Initialize MCP wrappers/servers
+        self.mcp_services = {}
+        
+        # Initialize PostgreSQL MCP wrapper
         postgres_cfg = CONFIG.get('mcp_postgres', {})
-        kafka_cfg = CONFIG.get('mcp_kafka', {})
-        aws_cfg = CONFIG.get('mcp_aws', {})
-        # Initialize each MCP implementation and wrap with MCPClient
         if postgres_cfg:
-            self.mcp_clients['postgres'] = MCPClient(PostgresMCP(postgres_cfg))
+            self.mcp_services['postgres'] = PostgresMCPWrapper()
+            
+        # Initialize Kafka MCP wrapper
+        kafka_cfg = CONFIG.get('mcp_kafka', {})
         if kafka_cfg:
-            self.mcp_clients['kafka'] = MCPClient(KafkaMCP(kafka_cfg))
+            kafka_servers = kafka_cfg.get('bootstrap_servers', 'localhost:9092')
+            kafka_config = ExternalKafkaMCPConfig(
+                bootstrap_servers=kafka_servers,
+                topic_name=kafka_cfg.get('topic_name', 'customer-support'),
+                group_id=kafka_cfg.get('group_id', 'ai-support-group')
+            )
+            self.mcp_services['kafka'] = KafkaMCPWrapper(kafka_config)
+            
+        # Initialize AWS MCP wrapper
+        aws_cfg = CONFIG.get('mcp_aws', {})
         if aws_cfg:
-            self.mcp_clients['aws'] = MCPClient(AWSMCP(aws_cfg))
-        # Connect all MCP clients
-        for client in self.mcp_clients.values():
-            client.connect()
-        self.logger.info(f"Initialized MCP clients: {list(self.mcp_clients.keys())}")
+            from mcp.aws_mcp_wrapper import ExternalMCPConfig
+            aws_config = ExternalMCPConfig(
+                aws_profile=aws_cfg.get('profile', 'default'),
+                aws_region=aws_cfg.get('region', 'us-east-1')
+            )
+            self.mcp_services['aws'] = AWSMCPWrapper(aws_config)
+            
+        # Initialize all MCP services
+        for name, service in self.mcp_services.items():
+            try:
+                if hasattr(service, 'initialize'):
+                    await service.initialize()
+                elif hasattr(service, 'start'):
+                    await service.start()
+                self.logger.info(f"Initialized MCP service: {name}")
+            except Exception as e:
+                self.logger.error(f"Failed to initialize MCP service {name}: {e}")
+                
+        self.logger.info(f"Initialized MCP services: {list(self.mcp_services.keys())}")
     
     async def process_query(self, query_data: Dict[str, Any]) -> Dict[str, Any]:
         """Enhanced query processing with full database integration"""
@@ -166,7 +184,7 @@ class EnhancedGeneticAISupport:
             enhanced_query_data = await self.database_service.process_customer_query(query_data)
             
             # Add MCP info to enhanced_query_data
-            enhanced_query_data['mcp_clients'] = self.mcp_clients
+            enhanced_query_data['mcp_services'] = self.mcp_services
             
             # Step 1: Enhanced Query Analysis (Claude with DB context)
             self.logger.info(f"Processing query for customer {enhanced_query_data.get('customer_id')}")
@@ -180,7 +198,7 @@ class EnhancedGeneticAISupport:
                 'customer_id': enhanced_query_data.get('customer_id'),
                 'ticket_id': enhanced_query_data.get('ticket_id')
             }
-            knowledge_data['mcp_clients'] = self.mcp_clients
+            knowledge_data['mcp_services'] = self.mcp_services
             knowledge_result = await self.agents['knowledge'].process_input(knowledge_data)
             
             # Step 3: Response Generation (GPT with context)
@@ -191,7 +209,7 @@ class EnhancedGeneticAISupport:
                 'ticket_id': enhanced_query_data.get('ticket_id'),
                 'session_id': enhanced_query_data.get('session_id')
             }
-            response_data['mcp_clients'] = self.mcp_clients
+            response_data['mcp_services'] = self.mcp_services
             response_result = await self.agents['response'].process_input(response_data)
             
             # Calculate total processing time

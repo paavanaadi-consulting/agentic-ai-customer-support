@@ -13,9 +13,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import MCP components
-from mcp.database_mcp_server import DatabaseMCPServer
-from mcp.kafka_mcp_server import KafkaMCPServer
-from mcp.aws_mcp_server import AWSMCPServer
+from mcp.postgres_mcp_wrapper import PostgresMCPWrapper
+from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
+from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
 from mcp.mcp_client import MCPClientManager
 
 # Import data sources
@@ -36,27 +36,31 @@ class CustomerSupportMCPOrchestrator:
         logger.info("Initializing MCP servers...")
         
         try:
-            # Initialize Database MCP Server
-            db_connector = RDBMSConnector()
-            await db_connector.connect()
-            self.db_server = DatabaseMCPServer(db_connector)
-            await self.db_server.start()
-            logger.info("Database MCP server started")
+            # Initialize Database MCP Wrapper
+            db_connection_string = os.getenv("DATABASE_URL", "postgresql://admin:password@localhost:5432/customer_support")
+            self.db_server = PostgresMCPWrapper(db_connection_string)
+            await self.db_server.initialize()
+            logger.info("Database MCP wrapper started")
             
             # Initialize Kafka MCP Server
             kafka_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-            self.kafka_server = KafkaMCPServer(kafka_servers)
-            await self.kafka_server.start()
+            kafka_config = ExternalKafkaMCPConfig(
+                bootstrap_servers=kafka_servers,
+                topic_name="example-topic",
+                group_id="example-group"
+            )
+            self.kafka_server = KafkaMCPWrapper(kafka_config)
+            await self.kafka_server.initialize()
             logger.info("Kafka MCP server started")
             
-            # Initialize AWS MCP Server
-            self.aws_server = AWSMCPServer(
-                aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-                aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-                region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1")
+            # Initialize AWS MCP Wrapper
+            aws_config = ExternalMCPConfig(
+                aws_profile=os.getenv("AWS_PROFILE", "default"),
+                aws_region=os.getenv("AWS_DEFAULT_REGION", "us-east-1")
             )
-            await self.aws_server.start()
-            logger.info("AWS MCP server started")
+            self.aws_server = AWSMCPWrapper(aws_config)
+            await self.aws_server.initialize()
+            logger.info("AWS MCP wrapper started")
             
             # Set up MCP client connections
             await self.setup_client_connections()
@@ -197,12 +201,13 @@ class CustomerSupportMCPOrchestrator:
             })
             
             # Get Kafka topic information
-            topics_info = await self.kafka_server.get_resource("kafka://topics")
+            topics_result = await self.kafka_server.call_tool("list_topics", {})
+            topic_count = len(topics_result.get("result", {}).get("topics", [])) if topics_result.get("success") else 0
             
             # Combine analytics
             combined_analytics = {
                 "database_analytics": analytics.get("analytics", {}),
-                "kafka_topics": len(topics_info.get("contents", [{}])[0].get("text", "[]")),
+                "kafka_topics": topic_count,
                 "timestamp": datetime.now().isoformat()
             }
             

@@ -35,9 +35,9 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 The system uses MCP servers to provide modular access to various services:
 
 ### MCP Servers
-- **Database MCP Server** (`mcp/database_mcp_server.py`): PostgreSQL operations
-- **Kafka MCP Server** (`mcp/kafka_mcp_server.py`): Apache Kafka messaging
-- **AWS MCP Server** (`mcp/aws_mcp_server.py`): AWS services (S3, Lambda, SSM)
+- **Database MCP Wrapper** (`mcp/postgres_mcp_wrapper.py`): External postgres-mcp package with fallback
+- **Kafka MCP Wrapper** (`mcp/kafka_mcp_wrapper.py`): Apache Kafka messaging with external package integration
+- **AWS MCP Wrapper** (`mcp/aws_mcp_wrapper.py`): External AWS MCP packages with fallback
 
 ### MCP Client Manager
 - **MCP Client** (`mcp/mcp_client.py`): Unified interface for MCP server communication
