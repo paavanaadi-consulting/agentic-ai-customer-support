@@ -1,27 +1,193 @@
 """
-Kafka MCP Wrapper for External Kafka MCP Server
-Provides unified interface for external Kafka MCP server with fallback to custom implementation
+Kafka MCP Wrapper for Official MCP Kafka Server
+Provides unified interface for official MCP Kafka server with fallback to custom implementation
 """
 import os
 import json
 import subprocess
 import asyncio
 import logging
+import sys
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 
 @dataclass
 class ExternalKafkaMCPConfig:
-    """Configuration for external Kafka MCP server"""
+    """Configuration for official MCP Kafka server"""
     bootstrap_servers: str = "localhost:9092"
     topic_name: str = "default-topic"
     group_id: str = "kafka-mcp-group"
     use_uvx: bool = True  # Use uvx for package management
     fallback_to_custom: bool = True
 
+class BasicKafkaWrapper:
+    """Basic Kafka wrapper for fallback functionality"""
+    
+    def __init__(self, bootstrap_servers: str):
+        self.bootstrap_servers = bootstrap_servers
+        self.producer = None
+        self.admin_client = None
+        self.logger = logging.getLogger("BasicKafkaWrapper")
+    
+    async def initialize(self):
+        """Initialize Kafka connections"""
+        try:
+            from kafka import KafkaProducer, KafkaAdminClient
+            import json
+            
+            self.producer = KafkaProducer(
+                bootstrap_servers=self.bootstrap_servers,
+                value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+                key_serializer=lambda k: k.encode('utf-8') if k else None
+            )
+            
+            self.admin_client = KafkaAdminClient(
+                bootstrap_servers=self.bootstrap_servers
+            )
+            
+            self.logger.info("Basic Kafka wrapper initialized")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize basic Kafka wrapper: {e}")
+            raise
+    
+    async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Call tool with basic Kafka operations"""
+        try:
+            if tool_name == 'publish_message':
+                return await self._publish_message(arguments)
+            elif tool_name == 'list_topics':
+                return await self._list_topics()
+            elif tool_name == 'get_topic_metadata':
+                return await self._get_topic_metadata(arguments)
+            elif tool_name == 'consume_messages':
+                return await self._consume_messages(arguments)
+            else:
+                return {
+                    'success': False,
+                    'error': f"Tool '{tool_name}' not supported in basic fallback"
+                }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    async def _publish_message(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Publish message to Kafka topic"""
+        topic = arguments.get('topic')
+        message = arguments.get('message', arguments.get('value'))
+        key = arguments.get('key')
+        
+        try:
+            future = self.producer.send(topic, value=message, key=key)
+            record_metadata = future.get(timeout=10)
+            
+            return {
+                'success': True,
+                'result': {
+                    'topic': record_metadata.topic,
+                    'partition': record_metadata.partition,
+                    'offset': record_metadata.offset
+                }
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    async def _list_topics(self) -> Dict[str, Any]:
+        """List available topics"""
+        try:
+            metadata = self.admin_client.describe_topics()
+            topics = list(metadata.keys())
+            
+            return {
+                'success': True,
+                'result': {
+                    'topics': topics
+                }
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    async def _get_topic_metadata(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Get topic metadata"""
+        topic = arguments.get('topic')
+        
+        try:
+            metadata = self.admin_client.describe_topics([topic])
+            topic_metadata = metadata.get(topic, {})
+            
+            return {
+                'success': True,
+                'result': {
+                    'topic': topic,
+                    'metadata': topic_metadata
+                }
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    async def _consume_messages(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Consume messages from topic (basic implementation)"""
+        topic = arguments.get('topic')
+        max_messages = arguments.get('max_messages', 10)
+        
+        try:
+            from kafka import KafkaConsumer
+            import json
+            
+            consumer = KafkaConsumer(
+                topic,
+                bootstrap_servers=self.bootstrap_servers,
+                value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+                consumer_timeout_ms=5000,
+                auto_offset_reset='earliest'
+            )
+            
+            messages = []
+            for i, message in enumerate(consumer):
+                if i >= max_messages:
+                    break
+                messages.append({
+                    'topic': message.topic,
+                    'partition': message.partition,
+                    'offset': message.offset,
+                    'key': message.key.decode('utf-8') if message.key else None,
+                    'value': message.value
+                })
+            
+            consumer.close()
+            
+            return {
+                'success': True,
+                'result': {
+                    'messages': messages,
+                    'count': len(messages)
+                }
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    async def stop(self):
+        """Stop the basic Kafka wrapper"""
+        if self.producer:
+            self.producer.close()
+        self.logger.info("Basic Kafka wrapper stopped")
+
 class KafkaMCPWrapper:
     """
-    Wrapper for external Kafka MCP server with fallback to custom implementation
+    Wrapper for official MCP Kafka server with fallback to custom implementation
     """
     
     def __init__(self, config: ExternalKafkaMCPConfig = None):
@@ -31,12 +197,12 @@ class KafkaMCPWrapper:
         self.external_process = None
         self.custom_server = None
         
-        # Environment variables for external server
+        # Environment variables for official server
         self.env_vars = {
             "KAFKA_BOOTSTRAP_SERVERS": self.config.bootstrap_servers,
-            "TOPIC_NAME": self.config.topic_name,
-            "DEFAULT_GROUP_ID_FOR_CONSUMER": self.config.group_id,
-            "IS_TOPIC_READ_FROM_BEGINNING": "False"
+            "KAFKA_TOPIC_NAME": self.config.topic_name,
+            "KAFKA_GROUP_ID": self.config.group_id,
+            "KAFKA_AUTO_OFFSET_RESET": "earliest"
         }
 
     async def initialize(self):
@@ -62,8 +228,17 @@ class KafkaMCPWrapper:
                 raise
 
     async def _check_external_availability(self):
-        """Check if external Kafka MCP server package is available"""
+        """Check if official MCP Kafka server package is available"""
         try:
+            # First try to import the package directly
+            try:
+                import kafka_mcp
+                self.external_available = True
+                self.logger.info("Official kafka-mcp package found")
+                return
+            except ImportError:
+                self.logger.info("Official kafka-mcp package not found, attempting installation")
+            
             if self.config.use_uvx:
                 # Check if uvx is available and can install the package
                 result = await asyncio.create_subprocess_exec(
@@ -77,44 +252,49 @@ class KafkaMCPWrapper:
                     self.logger.warning("uvx not available, trying pip install")
                     return await self._check_pip_availability()
                 
-                # Try to install/check external package with uvx
+                # Try to install official package with uvx
                 result = await asyncio.create_subprocess_exec(
-                    'uvx', 'run', '--from', 'git+https://github.com/pavanjava/kafka_mcp_server.git',
-                    'kafka-mcp-server', '--help',
+                    'uvx', 'install', 'git+https://github.com/modelcontextprotocol/kafka-mcp.git',
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE
                 )
                 await result.communicate()
                 
                 self.external_available = (result.returncode == 0)
+                if self.external_available:
+                    self.logger.info("Official kafka-mcp installed via uvx")
             else:
                 return await self._check_pip_availability()
                 
         except Exception as e:
-            self.logger.warning(f"Failed to check external Kafka MCP availability: {e}")
+            self.logger.warning(f"Failed to check official MCP Kafka availability: {e}")
             self.external_available = False
 
     async def _check_pip_availability(self):
-        """Check if external package can be installed via pip"""
+        """Check if official package can be installed via pip"""
         try:
-            # Try installing the external package
+            # Try installing the official package
             result = await asyncio.create_subprocess_exec(
-                'pip', 'install', '-q', 'git+https://github.com/pavanjava/kafka_mcp_server.git',
+                sys.executable, '-m', 'pip', 'install', 
+                'git+https://github.com/modelcontextprotocol/kafka-mcp.git',
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
-            await result.communicate()
+            stdout, stderr = await result.communicate()
             
             if result.returncode == 0:
-                # Test if we can import it
-                result = await asyncio.create_subprocess_exec(
-                    'python', '-c', 'from kafka_mcp_server.main import main',
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                await result.communicate()
-                
-                self.external_available = (result.returncode == 0)
+                self.external_available = True
+                self.logger.info("Official kafka-mcp installed via pip")
+                # Try to import after installation
+                try:
+                    import kafka_mcp
+                    return True
+                except ImportError as e:
+                    self.logger.warning(f"Installation succeeded but import failed: {e}")
+                    self.external_available = False
+            else:
+                self.logger.warning(f"pip install failed: {stderr.decode()}")
+                self.external_available = False
             
         except Exception as e:
             self.logger.warning(f"Failed to check pip installation: {e}")
@@ -129,12 +309,12 @@ class KafkaMCPWrapper:
         if self.config.use_uvx:
             # Start external server with uvx
             cmd = [
-                'uvx', 'run', '--from', 'git+https://github.com/pavanjava/kafka_mcp_server.git',
-                'kafka-mcp-server', '--transport', 'stdio'
+                'uvx', 'run', '--from', 'git+https://github.com/modelcontextprotocol/kafka-mcp.git',
+                'kafka-mcp', '--transport', 'stdio'
             ]
         else:
-            # Start external server with python
-            cmd = ['python', '-c', 'from kafka_mcp_server.main import main; main()']
+            # Start external server with python module
+            cmd = ['python', '-m', 'kafka_mcp.server']
         
         self.external_process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -148,11 +328,18 @@ class KafkaMCPWrapper:
 
     async def _setup_custom_fallback(self):
         """Setup custom Kafka MCP server as fallback"""
-        from mcp.kafka_mcp_server import KafkaMCPServer
-        
-        self.custom_server = KafkaMCPServer(self.config.bootstrap_servers)
-        await self.custom_server.start()
-        self.logger.info("Custom Kafka MCP server started as fallback")
+        try:
+            # Try to import basic Kafka functionality as fallback
+            from kafka import KafkaProducer, KafkaConsumer, KafkaAdminClient
+            from kafka.admin import ConfigResource, NewTopic
+            
+            # Create a simple wrapper for basic Kafka operations
+            self.custom_server = BasicKafkaWrapper(self.config.bootstrap_servers)
+            await self.custom_server.initialize()
+            self.logger.info("Basic Kafka wrapper started as fallback")
+        except ImportError:
+            self.logger.error("No Kafka libraries available for fallback. Please install kafka-python or the official MCP package")
+            raise RuntimeError("No Kafka implementation available")
 
     async def start(self):
         """Start the Kafka MCP service"""
@@ -180,18 +367,18 @@ class KafkaMCPWrapper:
             raise RuntimeError("No Kafka MCP server available")
 
     async def _call_external_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """Call tool on external MCP server"""
+        """Call tool on official MCP server"""
         try:
-            # Map our tool names to external server tool names
+            # Map our tool names to official MCP server tool names
             tool_mapping = {
-                'publish_message': 'kafka-publish',
-                'consume_messages': 'kafka-consume',
-                'create_topic': 'create-topic',
-                'delete_topic': 'delete-topic',
-                'list_topics': 'list-topics',
-                'get_topic_metadata': 'cluster-metadata',
-                'get_topic_config': 'topic-config',
-                'cluster_health': 'cluster-health'
+                'publish_message': 'kafka_publish',
+                'consume_messages': 'kafka_consume',
+                'create_topic': 'kafka_create_topic',
+                'delete_topic': 'kafka_delete_topic',
+                'list_topics': 'kafka_list_topics',
+                'get_topic_metadata': 'kafka_describe_topic',
+                'describe_cluster': 'kafka_describe_cluster',
+                'consumer_groups': 'kafka_consumer_groups'
             }
             
             external_tool = tool_mapping.get(tool_name, tool_name)
@@ -207,7 +394,7 @@ class KafkaMCPWrapper:
                 }
             }
             
-            # Send request to external server
+            # Send request to official server
             request_json = json.dumps(request) + '\n'
             self.external_process.stdin.write(request_json.encode())
             await self.external_process.stdin.drain()
@@ -243,13 +430,13 @@ class KafkaMCPWrapper:
         if self.external_available:
             return [
                 'publish_message',
-                'consume_messages', 
+                'consume_messages',
                 'create_topic',
                 'delete_topic',
                 'list_topics',
                 'get_topic_metadata',
-                'get_topic_config',
-                'cluster_health'
+                'describe_cluster',
+                'consumer_groups'
             ]
         elif self.custom_server:
             return [

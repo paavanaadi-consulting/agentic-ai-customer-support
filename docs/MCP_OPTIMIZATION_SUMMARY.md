@@ -12,10 +12,10 @@ The repository has been successfully optimized to use Model Context Protocol (MC
   - Comprehensive tool definitions (query_database, get_customer_context, search_knowledge_base, save_interaction, get_analytics)
   - Resource definitions for customers, tickets, knowledge articles, interactions, analytics
   
-- ✅ **Kafka MCP Server** (`mcp/kafka_mcp_server.py`)
+- ✅ **Kafka MCP Wrapper** (`mcp/kafka_mcp_wrapper.py`)
+  - Official kafka-mcp package integration with fallback to BasicKafkaWrapper
   - Full Kafka operations (publish, consume, topic management)
-  - Background consumer support
-  - Topic metadata and broker information access
+  - Background consumer support and cluster information access
   
 - ✅ **AWS MCP Server** (`mcp/aws_mcp_server.py`)
   - S3 operations (upload, download, list, delete)

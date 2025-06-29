@@ -50,7 +50,7 @@ dependencies = [
 
     # Git dependencies
     "postgres-mcp @ git+https://github.com/crystaldba/postgres-mcp.git",
-    "kafka_mcp_server @ git+https://github.com/pavanjava/kafka_mcp_server.git",
+    "kafka-mcp @ git+https://github.com/modelcontextprotocol/kafka-mcp.git",
 ]
 
 [project.optional-dependencies]

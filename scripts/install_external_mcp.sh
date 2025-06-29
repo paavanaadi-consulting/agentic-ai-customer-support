@@ -15,9 +15,9 @@ echo "🔌 Installing external MCP packages..."
 echo "Installing postgres-mcp from GitHub..."
 pip install git+https://github.com/crystaldba/postgres-mcp.git
 
-# Install kafka-mcp-server
-echo "Installing kafka-mcp-server from GitHub..."
-pip install git+https://github.com/pavanjava/kafka_mcp_server.git
+# Install kafka-mcp
+echo "Installing kafka-mcp from GitHub..."
+pip install git+https://github.com/modelcontextprotocol/kafka-mcp.git
 
 # Verify installation
 echo "🔍 Verifying installations..."
@@ -31,13 +31,13 @@ except ImportError as e:
     print(f'❌ postgres-mcp installation failed: {e}')
 "
 
-# Check kafka-mcp-server
+# Check kafka-mcp
 python -c "
 try:
-    import kafka_mcp_server
-    print('✅ kafka-mcp-server installed successfully')
+    import kafka_mcp
+    print('✅ kafka-mcp installed successfully')
 except ImportError as e:
-    print(f'❌ kafka-mcp-server installation failed: {e}')
+    print(f'❌ kafka-mcp installation failed: {e}')
 "
 
 # Check other dependencies
@@ -54,8 +54,8 @@ echo "  - Source: https://github.com/crystaldba/postgres-mcp"
 echo "  - Features: Schema introspection, query optimization, security"
 echo "  - Integration: Wrapped in mcp/postgres_mcp_wrapper.py"
 echo ""
-echo "kafka-mcp-server: Comprehensive Kafka MCP server"
-echo "  - Source: https://github.com/pavanjava/kafka_mcp_server"
+echo "kafka-mcp: Official Kafka MCP server from Model Context Protocol organization"
+echo "  - Source: https://github.com/modelcontextprotocol/kafka-mcp"
 echo "  - Features: Publish, consume, topic management, cluster health"
 echo "  - Integration: Wrapped in mcp/kafka_mcp_wrapper.py"
 echo ""
@@ -65,7 +65,7 @@ echo ""
 echo "External MCP integration:"
 echo "  - AWS MCP Wrapper: mcp/aws_mcp_wrapper.py (external awslabs packages)"
 echo "  - Postgres MCP Wrapper: mcp/postgres_mcp_wrapper.py (external postgres-mcp)"
-echo "  - Kafka MCP Wrapper: mcp/kafka_mcp_wrapper.py (external kafka-mcp-server)"
+echo "  - Kafka MCP Wrapper: mcp/kafka_mcp_wrapper.py (external kafka-mcp)"
 echo ""
 echo "✅ Installation complete!"
 echo "Installing external AWS MCP packages..."

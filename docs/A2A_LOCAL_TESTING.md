@@ -175,7 +175,7 @@ async def test_kafka_mcp():
     wrapper = KafkaMCPWrapper(config)
     await wrapper.initialize()
     
-    # Test topic listing via external kafka-mcp-server  
+    # Test topic listing via external kafka-mcp  
     result = await wrapper.call_tool('list-topics', {})
     print(f'Kafka MCP Result: {result}')
     
@@ -490,7 +490,7 @@ uvx list | grep -E "(postgres-mcp|kafka-mcp|awslabs)"
 
 # Update external MCP packages
 uvx upgrade postgres-mcp
-uvx upgrade kafka-mcp-server
+uvx upgrade kafka-mcp
 uvx upgrade awslabs.lambda-tool-mcp-server
 
 # Docker cleanup

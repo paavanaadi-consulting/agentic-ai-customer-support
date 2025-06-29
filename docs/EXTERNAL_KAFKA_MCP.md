@@ -1,60 +1,61 @@
-# External Kafka MCP Integration
+# Official MCP Kafka Integration
 
-This document describes the integration with the external Kafka MCP server package, which replaces our custom Kafka MCP implementation with a more comprehensive, community-maintained solution.
+This document describes the integration with the official Kafka MCP server from the Model Context Protocol organization, which provides a comprehensive, officially-maintained Kafka integration.
 
 ## Overview
 
-The Kafka MCP Wrapper (`mcp/kafka_mcp_wrapper.py`) provides a unified interface to the external [`pavanjava/kafka_mcp_server`](https://github.com/pavanjava/kafka_mcp_server) package, with automatic fallback to our custom implementation if the external package is not available.
+The Kafka MCP Wrapper (`mcp/kafka_mcp_wrapper.py`) provides a unified interface to the official [`modelcontextprotocol/kafka-mcp`](https://github.com/modelcontextprotocol/kafka-mcp) package, with automatic fallback to our custom implementation if the official package is not available.
 
 ## Architecture
 
 ```
 KafkaMCPWrapper (our wrapper)
     ↓
-├── External Kafka MCP Server (preferred)
-│   ├── pavanjava/kafka_mcp_server
+├── Official MCP Kafka Server (preferred)
+│   ├── modelcontextprotocol/kafka-mcp
+│   ├── Official MCP implementation
 │   ├── Comprehensive tools and features
 │   └── Installed via pip or uvx
-└── Custom Kafka MCP Server (fallback)
-    ├── mcp/kafka_mcp_server.py
-    ├── Basic tools
-    └── Always available
+└── Basic Kafka Wrapper (fallback)
+    ├── BasicKafkaWrapper class
+    ├── Uses kafka-python directly
+    └── Always available with kafka-python installed
 ```
 
-## External Package Features
+## Official Package Features
 
-The external `pavanjava/kafka_mcp_server` package provides:
+The official `modelcontextprotocol/kafka-mcp` package provides:
 
 ### Tools Available
-- **kafka-publish**: Publish messages to topics
-- **kafka-consume**: Consume messages from topics  
-- **create-topic**: Create new Kafka topics
-- **delete-topic**: Delete existing topics
-- **list-topics**: List all available topics
-- **topic-config**: Get/update topic configurations
-- **cluster-health**: Check cluster health status
-- **cluster-metadata**: Get cluster metadata information
+- **kafka_publish**: Publish messages to Kafka topics
+- **kafka_consume**: Consume messages from topics  
+- **kafka_list_topics**: List all available topics
+- **kafka_describe_topic**: Get detailed topic information
+- **kafka_create_topic**: Create new Kafka topics (if supported)
+- **kafka_delete_topic**: Delete existing topics (if supported)
+- **kafka_describe_cluster**: Get cluster information
+- **kafka_consumer_groups**: Manage consumer groups
 
 ### Advantages over Custom Implementation
-- ✅ **Async Support**: Built with aiokafka for better performance
-- ✅ **Comprehensive Features**: Full topic and cluster management
-- ✅ **Better Error Handling**: Robust error handling and logging
-- ✅ **Configuration Management**: Uses Pydantic for settings
-- ✅ **Modern MCP Patterns**: Follows latest MCP server patterns
-- ✅ **Community Maintained**: Actively maintained external package
+- ✅ **Official Support**: Maintained by the MCP organization
+- ✅ **Standard Compliance**: Follows official MCP specifications
+- ✅ **Latest Features**: Access to newest MCP capabilities
+- ✅ **Community Support**: Backed by the MCP community
+- ✅ **Better Integration**: Seamless integration with MCP ecosystem
+- ✅ **Comprehensive Features**: Full Kafka management capabilities
 
 ## Configuration
 
 ### Environment Variables
 
-Set these environment variables for the external Kafka server:
+Set these environment variables for the official Kafka server:
 
 ```bash
 # Kafka Configuration
 KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-TOPIC_NAME=your-topic-name
-IS_TOPIC_READ_FROM_BEGINNING=False
-DEFAULT_GROUP_ID_FOR_CONSUMER=kafka-mcp-group
+KAFKA_TOPIC_NAME=customer-support
+KAFKA_GROUP_ID=ai-support-group
+KAFKA_AUTO_OFFSET_RESET=earliest
 ```
 
 ### Python Configuration
@@ -82,23 +83,23 @@ await kafka_server.initialize()
 
 ### Option 1: Via pip (Automatic)
 
-The wrapper automatically attempts to install the external package:
+The wrapper automatically attempts to install the official package:
 
 ```bash
-pip install git+https://github.com/pavanjava/kafka_mcp_server.git
+pip install git+https://github.com/modelcontextprotocol/kafka-mcp.git
 ```
 
 ### Option 2: Via uvx (Recommended)
 
 ```bash
-uvx install git+https://github.com/pavanjava/kafka_mcp_server.git
+uvx install git+https://github.com/modelcontextprotocol/kafka-mcp.git
 ```
 
 ### Option 3: Via requirements.txt
 
 Already included in our `requirements.txt`:
 ```
-kafka-mcp-server @ git+https://github.com/pavanjava/kafka_mcp_server.git
+kafka-mcp @ git+https://github.com/modelcontextprotocol/kafka-mcp.git
 ```
 
 ## Usage Examples
@@ -110,22 +111,23 @@ kafka-mcp-server @ git+https://github.com/pavanjava/kafka_mcp_server.git
 kafka_wrapper = KafkaMCPWrapper(kafka_config)
 await kafka_wrapper.initialize()
 
-# Publish message (external server)
+# Publish message (official server)
 result = await kafka_wrapper.call_tool('publish_message', {
     'topic': 'customer-queries',
     'message': {'customer_id': '123', 'query': 'Help with billing'},
     'key': 'customer-123'
 })
 
-# Create topic (external server feature)
+# Create topic (official server feature)
 result = await kafka_wrapper.call_tool('create_topic', {
     'topic_name': 'new-topic',
-    'num_partitions': 3,
-    'replication_factor': 2
+    'partitions': 3,
+    'replication_factor': 1,
+    'config': {}
 })
 
-# Check cluster health (external server feature)
-result = await kafka_wrapper.call_tool('cluster_health', {})
+# Describe cluster (official server feature)
+result = await kafka_wrapper.call_tool('describe_cluster', {})
 ```
 
 ### Integration in Main Application
@@ -146,10 +148,10 @@ if kafka_cfg:
 
 ## Fallback Behavior
 
-### When External Package is Not Available
+### When Official Package is Not Available
 
-1. **Detection**: Wrapper checks if external package can be installed/imported
-2. **Fallback**: Automatically falls back to custom `KafkaMCPServer`
+1. **Detection**: Wrapper checks if official package can be installed/imported
+2. **Fallback**: Automatically falls back to `BasicKafkaWrapper` using kafka-python
 3. **Limited Features**: Only basic tools available in fallback mode
 4. **Transparent**: Application code doesn't need to change
 
@@ -162,18 +164,18 @@ if kafka_cfg:
 
 ## Tool Name Mapping
 
-The wrapper maps our internal tool names to external server tool names:
+The wrapper maps our internal tool names to official MCP tool names:
 
-| Internal Tool Name | External Tool Name | Description |
+| Internal Tool Name | Official Tool Name | Description |
 |-------------------|-------------------|-------------|
-| `publish_message` | `kafka-publish` | Publish messages |
-| `consume_messages` | `kafka-consume` | Consume messages |
-| `create_topic` | `create-topic` | Create topics |
-| `delete_topic` | `delete-topic` | Delete topics |
-| `list_topics` | `list-topics` | List topics |
-| `get_topic_metadata` | `cluster-metadata` | Get metadata |
-| `get_topic_config` | `topic-config` | Topic config |
-| `cluster_health` | `cluster-health` | Cluster health |
+| `publish_message` | `kafka_publish` | Publish messages |
+| `consume_messages` | `kafka_consume` | Consume messages |
+| `create_topic` | `kafka_create_topic` | Create topics |
+| `delete_topic` | `kafka_delete_topic` | Delete topics |
+| `list_topics` | `kafka_list_topics` | List topics |
+| `get_topic_metadata` | `kafka_describe_topic` | Get topic details |
+| `describe_cluster` | `kafka_describe_cluster` | Cluster info |
+| `consumer_groups` | `kafka_consumer_groups` | Consumer groups |
 
 ## Docker Integration
 
@@ -194,10 +196,10 @@ pytest tests/mcp_servers/test_kafka_mcp.py -v
 
 ## Troubleshooting
 
-### External Package Installation Issues
+### Official Package Installation Issues
 
 1. **Check uvx**: Ensure uvx is installed: `uvx --help`
-2. **Manual Install**: Try `pip install git+https://github.com/pavanjava/kafka_mcp_server.git`
+2. **Manual Install**: Try `pip install git+https://github.com/modelcontextprotocol/kafka-mcp.git`
 3. **Fallback Mode**: Set `fallback_to_custom=True` in config
 
 ### Connection Issues
@@ -215,21 +217,21 @@ print(f"Available tools: {tools}")
 
 # Check configuration
 config_info = kafka_wrapper.get_config_info()
-print(f"External available: {config_info['external_available']}")
+print(f"Official available: {config_info['external_available']}")
 print(f"Using fallback: {config_info['using_custom_fallback']}")
 ```
 
 ## Migration from Custom Server
 
-### Before (Custom Server)
+### Before (Basic Kafka Operations)
 ```python
-from mcp.kafka_mcp_server import KafkaMCPServer
+from kafka import KafkaProducer, KafkaConsumer
 
-kafka_server = KafkaMCPServer("localhost:9092")
-await kafka_server.start()
+producer = KafkaProducer(bootstrap_servers="localhost:9092")
+consumer = KafkaConsumer("topic-name", bootstrap_servers="localhost:9092")
 ```
 
-### After (External Wrapper)
+### After (Official Wrapper)
 ```python
 from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
 
@@ -247,7 +249,7 @@ await kafka_wrapper.initialize()
 1. **Tool Names**: Some tool names changed (see mapping table)
 2. **Configuration**: Now requires `ExternalKafkaMCPConfig`
 3. **Initialization**: Use `initialize()` instead of `start()`
-4. **New Features**: Many new tools available with external server
+4. **New Features**: Many new tools available with official server
 
 ## Future Improvements
 
@@ -259,6 +261,6 @@ await kafka_wrapper.initialize()
 
 ## References
 
-- [External Kafka MCP Server](https://github.com/pavanjava/kafka_mcp_server)
+- [Official MCP Kafka Server](https://github.com/modelcontextprotocol/kafka-mcp)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [Apache Kafka Documentation](https://kafka.apache.org/documentation/)

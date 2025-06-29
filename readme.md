@@ -25,12 +25,12 @@ The system uses external MCP servers through wrapper interfaces for modular serv
 
 ### External MCP Packages
 - **PostgreSQL**: `postgres-mcp` package from community (crystaldba/postgres-mcp)
-- **Kafka**: `kafka-mcp-server` package from community (pavanjava/kafka_mcp_server)
+- **Kafka**: `kafka-mcp` package from official Model Context Protocol organization (modelcontextprotocol/kafka-mcp)
 - **AWS Services**: AWS Labs MCP packages (lambda-tool, core, documentation servers)
 
 ### MCP Wrappers
 - **Postgres MCP Wrapper** (`mcp/postgres_mcp_wrapper.py`): External postgres-mcp package integration
-- **Kafka MCP Wrapper** (`mcp/kafka_mcp_wrapper.py`): External kafka-mcp-server integration
+- **Kafka MCP Wrapper** (`mcp/kafka_mcp_wrapper.py`): External kafka-mcp integration with fallback
 - **AWS MCP Wrapper** (`mcp/aws_mcp_wrapper.py`): External AWS MCP packages integration
 
 ### MCP Client Manager
@@ -247,7 +247,7 @@ python main.py
    
    # Manual installation
    uvx install postgres-mcp@git+https://github.com/crystaldba/postgres-mcp.git
-   uvx install kafka-mcp-server@git+https://github.com/pavanjava/kafka_mcp_server.git
+   uvx install git+https://github.com/modelcontextprotocol/kafka-mcp.git
    uvx install awslabs.lambda-tool-mcp-server
    uvx install awslabs.core-mcp-server
    uvx install awslabs.aws-documentation-mcp-server
