@@ -46,6 +46,7 @@ setup(
         # Web framework
         "fastapi>=0.100.0",
         "pydantic>=2.0.0",
+        "pydantic-settings>=2.0.0",
         
         # Environment and configuration
         "python-dotenv>=1.0.0",
