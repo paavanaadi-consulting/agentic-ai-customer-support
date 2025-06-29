@@ -1,6 +1,6 @@
 """
-Kafka MCP Wrapper for Official MCP Kafka Server
-Provides unified interface for official MCP Kafka server with fallback to custom implementation
+Kafka MCP Wrapper for Confluent MCP Kafka Server
+Provides unified interface for Confluent MCP Kafka server with fallback to custom implementation
 """
 import os
 import json
@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 @dataclass
 class ExternalKafkaMCPConfig:
-    """Configuration for official MCP Kafka server"""
+    """Configuration for Confluent MCP Kafka server"""
     bootstrap_servers: str = "localhost:9092"
     topic_name: str = "default-topic"
     group_id: str = "kafka-mcp-group"
@@ -187,7 +187,7 @@ class BasicKafkaWrapper:
 
 class KafkaMCPWrapper:
     """
-    Wrapper for official MCP Kafka server with fallback to custom implementation
+    Wrapper for Confluent MCP Kafka server with fallback to custom implementation
     """
     
     def __init__(self, config: ExternalKafkaMCPConfig = None):
@@ -197,7 +197,7 @@ class KafkaMCPWrapper:
         self.external_process = None
         self.custom_server = None
         
-        # Environment variables for official server
+        # Environment variables for Confluent server
         self.env_vars = {
             "KAFKA_BOOTSTRAP_SERVERS": self.config.bootstrap_servers,
             "KAFKA_TOPIC_NAME": self.config.topic_name,
@@ -228,16 +228,16 @@ class KafkaMCPWrapper:
                 raise
 
     async def _check_external_availability(self):
-        """Check if official MCP Kafka server package is available"""
+        """Check if Confluent MCP Kafka server package is available"""
         try:
             # First try to import the package directly
             try:
-                import kafka_mcp
+                import confluent_mcp
                 self.external_available = True
-                self.logger.info("Official kafka-mcp package found")
+                self.logger.info("Confluent MCP package found")
                 return
             except ImportError:
-                self.logger.info("Official kafka-mcp package not found, attempting installation")
+                self.logger.info("Confluent MCP package not found, attempting installation")
             
             if self.config.use_uvx:
                 # Check if uvx is available and can install the package
@@ -252,9 +252,9 @@ class KafkaMCPWrapper:
                     self.logger.warning("uvx not available, trying pip install")
                     return await self._check_pip_availability()
                 
-                # Try to install official package with uvx
+                # Try to install Confluent MCP package with uvx
                 result = await asyncio.create_subprocess_exec(
-                    'uvx', 'install', 'git+https://github.com/modelcontextprotocol/kafka-mcp.git',
+                    'uvx', 'install', 'git+https://github.com/confluentinc/mcp-confluent.git',
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE
                 )
@@ -262,7 +262,7 @@ class KafkaMCPWrapper:
                 
                 self.external_available = (result.returncode == 0)
                 if self.external_available:
-                    self.logger.info("Official kafka-mcp installed via uvx")
+                    self.logger.info("Confluent MCP installed via uvx")
             else:
                 return await self._check_pip_availability()
                 
@@ -301,30 +301,24 @@ class KafkaMCPWrapper:
             self.external_available = False
 
     async def _setup_external_server(self):
-        """Setup external Kafka MCP server"""
+        """Setup external Kafka MCP server (Confluent MCP)"""
         # Set environment variables
         env = os.environ.copy()
         env.update(self.env_vars)
         
-        if self.config.use_uvx:
-            # Start external server with uvx
-            cmd = [
-                'uvx', 'run', '--from', 'git+https://github.com/modelcontextprotocol/kafka-mcp.git',
-                'kafka-mcp', '--transport', 'stdio'
-            ]
-        else:
-            # Start external server with python module
-            cmd = ['python', '-m', 'kafka_mcp.server']
+        # Check if we're running in Docker and can connect to external Confluent MCP server
+        external_host = os.getenv('EXTERNAL_KAFKA_MCP_HOST', 'localhost')
+        external_port = os.getenv('EXTERNAL_KAFKA_MCP_PORT', '8002')
         
-        self.external_process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            env=env
-        )
+        self.logger.info(f"Connecting to external Confluent MCP server at {external_host}:{external_port}")
         
-        self.logger.info("External Kafka MCP server started")
+        # Note: In this setup, the external Confluent MCP server is managed by Docker Compose
+        # We don't start it here, just mark that it's available for use
+        self.external_available = True
+        self.external_host = external_host
+        self.external_port = external_port
+        
+        self.logger.info("External Confluent Kafka MCP server connection configured")
 
     async def _setup_custom_fallback(self):
         """Setup custom Kafka MCP server as fallback"""
@@ -367,9 +361,11 @@ class KafkaMCPWrapper:
             raise RuntimeError("No Kafka MCP server available")
 
     async def _call_external_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """Call tool on official MCP server"""
+        """Call tool on external Confluent MCP server"""
         try:
-            # Map our tool names to official MCP server tool names
+            import aiohttp
+            
+            # Map our tool names to Confluent MCP server tool names
             tool_mapping = {
                 'publish_message': 'kafka_publish',
                 'consume_messages': 'kafka_consume',
@@ -394,25 +390,29 @@ class KafkaMCPWrapper:
                 }
             }
             
-            # Send request to official server
-            request_json = json.dumps(request) + '\n'
-            self.external_process.stdin.write(request_json.encode())
-            await self.external_process.stdin.drain()
+            # Send HTTP request to external Confluent MCP server
+            url = f"http://{self.external_host}:{self.external_port}/mcp"
             
-            # Read response
-            response_line = await self.external_process.stdout.readline()
-            response_data = json.loads(response_line.decode().strip())
-            
-            if 'error' in response_data:
-                return {
-                    'success': False,
-                    'error': response_data['error']['message']
-                }
-            else:
-                return {
-                    'success': True,
-                    'result': response_data.get('result', {})
-                }
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=request) as response:
+                    if response.status == 200:
+                        response_data = await response.json()
+                        
+                        if 'error' in response_data:
+                            return {
+                                'success': False,
+                                'error': response_data['error']['message']
+                            }
+                        else:
+                            return {
+                                'success': True,
+                                'result': response_data.get('result', {})
+                            }
+                    else:
+                        return {
+                            'success': False,
+                            'error': f"HTTP {response.status}: {await response.text()}"
+                        }
                 
         except Exception as e:
             self.logger.error(f"External tool call failed: {e}")

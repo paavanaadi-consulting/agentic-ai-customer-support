@@ -14,6 +14,7 @@ pydantic>=2.0.0
 pydantic-settings>=2.0.0
 python-multipart>=0.0.6
 websockets>=11.0
+aiohttp>=3.8.0
 PyPDF2>=3.0.0
 sentence-transformers>=2.2.0
 scikit-learn>=1.3.0
@@ -24,7 +25,9 @@ loguru>=0.7.0
 
 # MCP Packages
 postgres-mcp @ git+https://github.com/crystaldba/postgres-mcp.git
-kafka-mcp @ git+https://github.com/modelcontextprotocol/kafka-mcp.git
+
+# Note: Kafka MCP is handled via Docker using Confluent's mcp-confluent server (Node.js)
+# See docker-compose.yml for the mcp-kafka-confluent service
 
 # External AWS MCP Packages (optional - can be installed via uvx)
 # These are commented out as they're typically installed via uvx

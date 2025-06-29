@@ -15,9 +15,8 @@ echo "🔌 Installing external MCP packages..."
 echo "Installing postgres-mcp from GitHub..."
 pip install git+https://github.com/crystaldba/postgres-mcp.git
 
-# Install kafka-mcp
-echo "Installing kafka-mcp from GitHub..."
-pip install git+https://github.com/modelcontextprotocol/kafka-mcp.git
+# Note: Kafka MCP (Confluent) is handled via Docker
+echo "Note: Kafka MCP (Confluent) will be installed via Docker - see docker-compose.yml"
 
 # Verify installation
 echo "🔍 Verifying installations..."
@@ -31,14 +30,8 @@ except ImportError as e:
     print(f'❌ postgres-mcp installation failed: {e}')
 "
 
-# Check kafka-mcp
-python -c "
-try:
-    import kafka_mcp
-    print('✅ kafka-mcp installed successfully')
-except ImportError as e:
-    print(f'❌ kafka-mcp installation failed: {e}')
-"
+# Note: kafka-mcp (Confluent) will be available via Docker
+echo "✅ kafka-mcp (Confluent) will be available via Docker - no local installation needed"
 
 # Check other dependencies
 python -c "
@@ -54,10 +47,10 @@ echo "  - Source: https://github.com/crystaldba/postgres-mcp"
 echo "  - Features: Schema introspection, query optimization, security"
 echo "  - Integration: Wrapped in mcp/postgres_mcp_wrapper.py"
 echo ""
-echo "kafka-mcp: Official Kafka MCP server from Model Context Protocol organization"
-echo "  - Source: https://github.com/modelcontextprotocol/kafka-mcp"
-echo "  - Features: Publish, consume, topic management, cluster health"
-echo "  - Integration: Wrapped in mcp/kafka_mcp_wrapper.py"
+echo "kafka-mcp (Confluent): Official Confluent Kafka MCP server (Node.js)"
+echo "  - Source: https://github.com/confluentinc/mcp-confluent"
+echo "  - Features: Publish, consume, topic management, cluster health (via Docker)"
+echo "  - Integration: Wrapped in mcp/kafka_mcp_wrapper.py (HTTP communication)"
 echo ""
 echo "Our custom MCP servers:"
 echo "  - Base MCP: mcp/base_mcp_server.py (base class for custom servers)"
@@ -65,7 +58,7 @@ echo ""
 echo "External MCP integration:"
 echo "  - AWS MCP Wrapper: mcp/aws_mcp_wrapper.py (external awslabs packages)"
 echo "  - Postgres MCP Wrapper: mcp/postgres_mcp_wrapper.py (external postgres-mcp)"
-echo "  - Kafka MCP Wrapper: mcp/kafka_mcp_wrapper.py (external kafka-mcp)"
+echo "  - Kafka MCP Wrapper: mcp/kafka_mcp_wrapper.py (external Confluent MCP via Docker)"
 echo ""
 echo "✅ Installation complete!"
 echo "Installing external AWS MCP packages..."

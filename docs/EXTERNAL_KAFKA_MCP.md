@@ -1,30 +1,30 @@
-# Official MCP Kafka Integration
+# Confluent MCP Kafka Integration (Docker-based)
 
-This document describes the integration with the official Kafka MCP server from the Model Context Protocol organization, which provides a comprehensive, officially-maintained Kafka integration.
+This document describes the integration with the Confluent Kafka MCP server, which provides a comprehensive, officially-maintained Kafka integration via Docker.
 
 ## Overview
 
-The Kafka MCP Wrapper (`mcp/kafka_mcp_wrapper.py`) provides a unified interface to the official [`modelcontextprotocol/kafka-mcp`](https://github.com/modelcontextprotocol/kafka-mcp) package, with automatic fallback to our custom implementation if the official package is not available.
+The Kafka MCP Wrapper (`mcp/kafka_mcp_wrapper.py`) provides a unified interface to the Confluent [`mcp-confluent`](https://github.com/confluentinc/mcp-confluent) package, which runs as a separate Docker service, with automatic fallback to our custom implementation if the external service is not available.
 
 ## Architecture
 
 ```
 KafkaMCPWrapper (our wrapper)
     ↓
-├── Official MCP Kafka Server (preferred)
-│   ├── modelcontextprotocol/kafka-mcp
-│   ├── Official MCP implementation
+├── Confluent MCP Server (preferred - Docker service)
+│   ├── confluentinc/mcp-confluent (Node.js)
+│   ├── Official Confluent implementation
 │   ├── Comprehensive tools and features
-│   └── Installed via pip or uvx
+│   └── Runs as Docker container
 └── Basic Kafka Wrapper (fallback)
     ├── BasicKafkaWrapper class
     ├── Uses kafka-python directly
     └── Always available with kafka-python installed
 ```
 
-## Official Package Features
+## Confluent Package Features
 
-The official `modelcontextprotocol/kafka-mcp` package provides:
+The Confluent `mcp-confluent` package provides:
 
 ### Tools Available
 - **kafka_publish**: Publish messages to Kafka topics

@@ -50,7 +50,7 @@ dependencies = [
 
     # Git dependencies
     "postgres-mcp @ git+https://github.com/crystaldba/postgres-mcp.git",
-    "kafka-mcp @ git+https://github.com/modelcontextprotocol/kafka-mcp.git",
+    # Note: Kafka MCP is handled via Docker using Confluent's mcp-confluent server
 ]
 
 [project.optional-dependencies]
