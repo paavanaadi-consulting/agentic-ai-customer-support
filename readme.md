@@ -4,15 +4,15 @@ A sophisticated multi-agent AI system that evolves and adapts to provide better 
 
 ## 🚀 Features
 
-- **A2A Protocol**: Modular agents communicate directly via WebSockets for scalable, decoupled orchestration
 - **External MCP Integration**: Uses official AWS Labs and community MCP servers instead of custom implementations
+- **A2A (Agent-to-Agent) Protocol**: Modular agents communicate via a decoupled orchestration protocol for maximum scalability and flexibility.
 - **Multi-Agent Architecture**: Modular agents (Claude, Gemini, GPT) with database context
 - **Dynamic LLM Selection**: Agents can use OpenAI, Gemini, or Claude LLMs, with provider/model/API key set via config or per-request
 - **Genetic Algorithm Evolution**: Agents evolve strategies for better performance
 - **Multiple Data Sources**: RDBMS, PDF documents, Vector DB, Kafka streams
 - **Full Database Integration**: Postgres schema for tickets, users, knowledge base, and analytics
 - **Unified Environment Config**: All settings via `config/settings.py` and `.env`
-- **Real-time Processing**: Asynchronous processing of customer queries
+- **Asynchronous Processing**: Built on `asyncio` for high-performance, real-time query handling.
 - **Performance Monitoring**: Built-in metrics, fitness evaluation, and health checks
 - **Enhanced Dashboard**: Customer and agent analytics, satisfaction trends, database health
 - **Extensible Scripts**: For DB initialization, seeding, import/export, health checks, and more
@@ -83,25 +83,6 @@ result = await aws_wrapper.call_tool("invoke_lambda", {
 
 ---
 
-# 🆕 A2A Agent Initialization with MCP Integration
-
-```python
-from a2a_protocol.a2a_query_agent import A2AQueryAgent
-from a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
-from a2a_protocol.a2a_response_agent import A2AResponseAgent
-from a2a_protocol.a2a_coordinator import A2ACoordinator
-from mcp.mcp_client import MCPClient
-
-# Initialize MCP client with external wrappers
-mcp_client = MCPClient()
-
-# Add external MCP servers
-await mcp_client.add_server("postgres", PostgresMCPWrapper("postgresql://..."))
-await mcp_client.add_server("kafka", KafkaMCPWrapper(kafka_config))
-await mcp_client.add_server("aws", AWSMCPWrapper(aws_config))
-
-# Initialize agents with MCP integration
-query_agent = A2AQueryAgent(
     agent_id="query-agent-1", 
     agent_type="query",
     mcp_clients={"main": mcp_client}
