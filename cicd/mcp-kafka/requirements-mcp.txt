@@ -1,0 +1,16 @@
+# Lightweight requirements for MCP services
+# Only includes essential packages needed for MCP servers
+
+# Core MCP dependencies
+psycopg2-binary==2.9.9
+boto3==1.35.0
+kafka-python==2.0.2
+aiohttp==3.10.5
+python-dotenv==1.0.1
+loguru==0.7.2
+
+# MCP Packages
+postgres-mcp @ git+https://github.com/crystaldba/postgres-mcp.git
+
+# Note: MCP services don't need heavy ML packages like sentence-transformers
+# Note: Scientific packages (numpy, pandas, scikit-learn) are not needed for MCP services

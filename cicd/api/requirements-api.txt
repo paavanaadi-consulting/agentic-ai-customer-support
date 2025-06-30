@@ -1,0 +1,34 @@
+# Lightweight requirements for API component only
+# Focused on web framework and essential dependencies
+
+# Web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+python-multipart==0.0.6
+websockets==12.0
+
+# HTTP client and async support
+aiohttp==3.9.1
+httpx==0.25.2
+
+# Database (lightweight)
+psycopg2-binary==2.9.9
+
+# Utility libraries
+python-dotenv==1.0.1
+loguru==0.7.2
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Validation and serialization
+email-validator==2.1.2
+
+# For API documentation
+Markdown==3.5.2
+
+# Monitoring and health checks
+prometheus-client==0.21.0

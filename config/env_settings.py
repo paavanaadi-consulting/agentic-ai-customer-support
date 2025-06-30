@@ -90,3 +90,6 @@ else:
     EnvSettings = DevSettings
 
 env_settings = EnvSettings()
+
+# For backward compatibility with existing imports
+CONFIG = env_settings

@@ -1,12 +1,368 @@
 """
-API routes for customer support system.
+API V1 routes for customer support system.
 """
-from fastapi import APIRouter, Depends
-from .schemas import QueryRequest, QueryResponse
+import uuid
+import time
+from datetime import datetime
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException, Query, Path
+from fastapi.responses import JSONResponse
+
+from .schemas import (
+    QueryRequest, QueryResponse, TicketRequest, TicketResponse,
+    CustomerRequest, CustomerResponse, FeedbackRequest, FeedbackResponse,
+    AnalyticsResponse, ErrorResponse, SuccessResponse,
+    TicketStatus, Priority, QueryType
+)
 
 router = APIRouter()
 
-@router.post("/query", response_model=QueryResponse)
-def handle_query(request: QueryRequest):
-    # Call agent logic here (stub)
-    return QueryResponse(result="Query processed", success=True)
+# In-memory storage for demo purposes (replace with database in production)
+queries_db = {}
+tickets_db = {}
+customers_db = {}
+feedback_db = {}
+
+# Query endpoints
+@router.post("/queries", response_model=QueryResponse, summary="Process customer query")
+async def process_query(request: QueryRequest):
+    """
+    Process a customer query using AI agents.
+    
+    This endpoint processes customer queries and returns intelligent responses
+    using the agentic AI system.
+    """
+    try:
+        query_id = str(uuid.uuid4())
+        processing_start = time.time()
+        
+        # Simulate query processing with different agents
+        agent_mapping = {
+            QueryType.TECHNICAL: "technical_agent",
+            QueryType.BILLING: "billing_agent", 
+            QueryType.ACCOUNT: "account_agent",
+            QueryType.COMPLAINT: "response_agent",
+            QueryType.GENERAL: "general_agent"
+        }
+        
+        agent_used = agent_mapping.get(request.query_type, "general_agent")
+        
+        # Simulate processing time
+        processing_time = time.time() - processing_start
+        
+        # Mock response generation
+        response_mapping = {
+            QueryType.TECHNICAL: f"Technical support response for: {request.query[:50]}...",
+            QueryType.BILLING: f"Billing inquiry handled: {request.query[:50]}...",
+            QueryType.ACCOUNT: f"Account information: {request.query[:50]}...",
+            QueryType.COMPLAINT: f"We apologize for the inconvenience regarding: {request.query[:50]}...",
+            QueryType.GENERAL: f"Thank you for your inquiry: {request.query[:50]}..."
+        }
+        
+        result = response_mapping.get(request.query_type, f"Response to: {request.query}")
+        
+        # Store query
+        query_data = {
+            "query_id": query_id,
+            "customer_id": request.customer_id,
+            "query": request.query,
+            "query_type": request.query_type,
+            "priority": request.priority,
+            "result": result,
+            "agent_used": agent_used,
+            "processing_time": processing_time,
+            "timestamp": datetime.utcnow(),
+            "context": request.context
+        }
+        queries_db[query_id] = query_data
+        
+        return QueryResponse(
+            query_id=query_id,
+            result=result,
+            confidence=0.85,  # Mock confidence score
+            success=True,
+            agent_used=agent_used,
+            processing_time=processing_time,
+            suggestions=[
+                "Check our FAQ section",
+                "Consider scheduling a call",
+                "Review our documentation"
+            ]
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Query processing failed: {str(e)}")
+
+@router.get("/queries/{query_id}", response_model=QueryResponse, summary="Get query by ID")
+async def get_query(query_id: str = Path(..., description="Query ID")):
+    """Get a specific query by its ID."""
+    if query_id not in queries_db:
+        raise HTTPException(status_code=404, detail="Query not found")
+    
+    query = queries_db[query_id]
+    return QueryResponse(
+        query_id=query["query_id"],
+        result=query["result"],
+        confidence=0.85,
+        success=True,
+        agent_used=query["agent_used"],
+        processing_time=query["processing_time"],
+        suggestions=[],
+        timestamp=query["timestamp"]
+    )
+
+@router.get("/queries", response_model=List[QueryResponse], summary="List queries")
+async def list_queries(
+    customer_id: Optional[str] = Query(None, description="Filter by customer ID"),
+    query_type: Optional[QueryType] = Query(None, description="Filter by query type"),
+    limit: int = Query(10, ge=1, le=100, description="Number of results to return")
+):
+    """List queries with optional filtering."""
+    filtered_queries = list(queries_db.values())
+    
+    if customer_id:
+        filtered_queries = [q for q in filtered_queries if q["customer_id"] == customer_id]
+    
+    if query_type:
+        filtered_queries = [q for q in filtered_queries if q["query_type"] == query_type]
+    
+    # Apply limit
+    filtered_queries = filtered_queries[:limit]
+    
+    return [
+        QueryResponse(
+            query_id=q["query_id"],
+            result=q["result"],
+            confidence=0.85,
+            success=True,
+            agent_used=q["agent_used"],
+            processing_time=q["processing_time"],
+            suggestions=[],
+            timestamp=q["timestamp"]
+        )
+        for q in filtered_queries
+    ]
+
+# Ticket endpoints
+@router.post("/tickets", response_model=TicketResponse, summary="Create support ticket")
+async def create_ticket(request: TicketRequest):
+    """Create a new support ticket."""
+    ticket_id = str(uuid.uuid4())
+    now = datetime.utcnow()
+    
+    ticket_data = {
+        "ticket_id": ticket_id,
+        "title": request.title,
+        "description": request.description,
+        "customer_id": request.customer_id,
+        "category": request.category,
+        "priority": request.priority,
+        "status": TicketStatus.OPEN,
+        "created_at": now,
+        "updated_at": now,
+        "tags": request.tags,
+        "assigned_agent": None
+    }
+    
+    tickets_db[ticket_id] = ticket_data
+    
+    return TicketResponse(
+        ticket_id=ticket_id,
+        title=request.title,
+        status=TicketStatus.OPEN,
+        customer_id=request.customer_id,
+        created_at=now,
+        updated_at=now,
+        priority=request.priority,
+        category=request.category
+    )
+
+@router.get("/tickets/{ticket_id}", response_model=TicketResponse, summary="Get ticket by ID")
+async def get_ticket(ticket_id: str = Path(..., description="Ticket ID")):
+    """Get a specific ticket by its ID."""
+    if ticket_id not in tickets_db:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    ticket = tickets_db[ticket_id]
+    return TicketResponse(**ticket)
+
+@router.put("/tickets/{ticket_id}/status", response_model=TicketResponse, summary="Update ticket status")
+async def update_ticket_status(
+    ticket_id: str = Path(..., description="Ticket ID"),
+    status: TicketStatus = Query(..., description="New ticket status")
+):
+    """Update the status of a specific ticket."""
+    if ticket_id not in tickets_db:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    tickets_db[ticket_id]["status"] = status
+    tickets_db[ticket_id]["updated_at"] = datetime.utcnow()
+    
+    ticket = tickets_db[ticket_id]
+    return TicketResponse(**ticket)
+
+@router.get("/tickets", response_model=List[TicketResponse], summary="List tickets")
+async def list_tickets(
+    customer_id: Optional[str] = Query(None, description="Filter by customer ID"),
+    status: Optional[TicketStatus] = Query(None, description="Filter by status"),
+    priority: Optional[Priority] = Query(None, description="Filter by priority"),
+    limit: int = Query(10, ge=1, le=100, description="Number of results to return")
+):
+    """List tickets with optional filtering."""
+    filtered_tickets = list(tickets_db.values())
+    
+    if customer_id:
+        filtered_tickets = [t for t in filtered_tickets if t["customer_id"] == customer_id]
+    
+    if status:
+        filtered_tickets = [t for t in filtered_tickets if t["status"] == status]
+        
+    if priority:
+        filtered_tickets = [t for t in filtered_tickets if t["priority"] == priority]
+    
+    # Apply limit
+    filtered_tickets = filtered_tickets[:limit]
+    
+    return [TicketResponse(**ticket) for ticket in filtered_tickets]
+
+# Customer endpoints
+@router.post("/customers", response_model=CustomerResponse, summary="Create customer")
+async def create_customer(request: CustomerRequest):
+    """Create a new customer profile."""
+    customer_id = str(uuid.uuid4())
+    now = datetime.utcnow()
+    
+    customer_data = {
+        "customer_id": customer_id,
+        "name": request.name,
+        "email": request.email,
+        "phone": request.phone,
+        "company": request.company,
+        "created_at": now,
+        "metadata": request.metadata,
+        "ticket_count": 0,
+        "last_interaction": None
+    }
+    
+    customers_db[customer_id] = customer_data
+    
+    return CustomerResponse(**customer_data)
+
+@router.get("/customers/{customer_id}", response_model=CustomerResponse, summary="Get customer by ID")
+async def get_customer(customer_id: str = Path(..., description="Customer ID")):
+    """Get a specific customer by their ID."""
+    if customer_id not in customers_db:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    customer = customers_db[customer_id]
+    return CustomerResponse(**customer)
+
+@router.get("/customers", response_model=List[CustomerResponse], summary="List customers")
+async def list_customers(
+    limit: int = Query(10, ge=1, le=100, description="Number of results to return")
+):
+    """List all customers."""
+    customers = list(customers_db.values())[:limit]
+    return [CustomerResponse(**customer) for customer in customers]
+
+# Feedback endpoints
+@router.post("/feedback", response_model=FeedbackResponse, summary="Submit feedback")
+async def submit_feedback(request: FeedbackRequest):
+    """Submit customer feedback."""
+    feedback_id = str(uuid.uuid4())
+    now = datetime.utcnow()
+    
+    feedback_data = {
+        "feedback_id": feedback_id,
+        "customer_id": request.customer_id,
+        "rating": request.rating,
+        "comment": request.comment,
+        "query_id": request.query_id,
+        "ticket_id": request.ticket_id,
+        "created_at": now
+    }
+    
+    feedback_db[feedback_id] = feedback_data
+    
+    return FeedbackResponse(**feedback_data)
+
+@router.get("/feedback", response_model=List[FeedbackResponse], summary="List feedback")
+async def list_feedback(
+    customer_id: Optional[str] = Query(None, description="Filter by customer ID"),
+    rating: Optional[int] = Query(None, ge=1, le=5, description="Filter by rating"),
+    limit: int = Query(10, ge=1, le=100, description="Number of results to return")
+):
+    """List feedback with optional filtering."""
+    filtered_feedback = list(feedback_db.values())
+    
+    if customer_id:
+        filtered_feedback = [f for f in filtered_feedback if f["customer_id"] == customer_id]
+    
+    if rating:
+        filtered_feedback = [f for f in filtered_feedback if f["rating"] == rating]
+    
+    # Apply limit
+    filtered_feedback = filtered_feedback[:limit]
+    
+    return [FeedbackResponse(**feedback) for feedback in filtered_feedback]
+
+# Analytics endpoints
+@router.get("/analytics", response_model=AnalyticsResponse, summary="Get analytics data")
+async def get_analytics():
+    """Get system analytics and metrics."""
+    
+    # Calculate metrics from in-memory data
+    total_queries = len(queries_db)
+    total_tickets = len(tickets_db)
+    total_customers = len(customers_db)
+    
+    # Calculate average response time
+    if queries_db:
+        avg_response_time = sum(q["processing_time"] for q in queries_db.values()) / len(queries_db)
+    else:
+        avg_response_time = 0.0
+    
+    # Calculate average rating
+    if feedback_db:
+        avg_rating = sum(f["rating"] for f in feedback_db.values()) / len(feedback_db)
+    else:
+        avg_rating = 0.0
+    
+    # Tickets by status
+    tickets_by_status = {}
+    for ticket in tickets_db.values():
+        status = ticket["status"].value
+        tickets_by_status[status] = tickets_by_status.get(status, 0) + 1
+    
+    # Queries by type
+    queries_by_type = {}
+    for query in queries_db.values():
+        query_type = query["query_type"].value
+        queries_by_type[query_type] = queries_by_type.get(query_type, 0) + 1
+    
+    return AnalyticsResponse(
+        total_queries=total_queries,
+        total_tickets=total_tickets,
+        total_customers=total_customers,
+        avg_response_time=avg_response_time,
+        avg_rating=avg_rating,
+        tickets_by_status=tickets_by_status,
+        queries_by_type=queries_by_type
+    )
+
+# Health and status endpoints
+@router.get("/status", response_model=dict, summary="Get API status")
+async def get_api_status():
+    """Get detailed API status information."""
+    return {
+        "status": "operational",
+        "version": "1.0.0",
+        "uptime": time.time(),
+        "endpoints": {
+            "queries": len(queries_db),
+            "tickets": len(tickets_db),
+            "customers": len(customers_db),
+            "feedback": len(feedback_db)
+        },
+        "timestamp": datetime.utcnow()
+    }
