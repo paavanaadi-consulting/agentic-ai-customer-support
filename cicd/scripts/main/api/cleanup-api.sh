@@ -9,7 +9,7 @@ echo "🧹 Cleaning up API Component..."
 cd "$(dirname "$0")/../../.."
 
 # Stop and remove API containers, networks, and volumes
-docker-compose -f docker-compose.api.yml down -v --remove-orphans
+docker-compose -f docker-compose.yml down api-service
 
 # Remove API-specific images
 echo "🗑️  Removing API Docker images..."

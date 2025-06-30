@@ -149,8 +149,7 @@ agentic-ai-customer-support/
 │   ├── vector_db_client.py
 │   └── kafka_consumer.py
 ├── 🐳 cicd/                      # Docker & CI/CD infrastructure
-│   ├── docker-compose.yml       # Full system deployment
-│   ├── docker-compose.api.yml   # API-only deployment
+│   ├── docker-compose.yml       # Consolidated deployment configuration
 │   ├── scripts/                 # Management scripts
 │   │   ├── main/               # Core infrastructure scripts
 │   │   │   ├── api/           # API-specific scripts

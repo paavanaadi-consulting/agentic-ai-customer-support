@@ -52,11 +52,11 @@ case "$1" in
         ;;
     "api-logs")
         echo "📋 Showing API logs..."
-        docker-compose -f $CICD_DIR/docker-compose.api.yml logs -f
+        docker-compose -f $CICD_DIR/docker-compose.yml logs -f api-service
         ;;
     "api-status")
         echo "📊 Checking API status..."
-        docker-compose -f $CICD_DIR/docker-compose.api.yml ps
+        docker-compose -f $CICD_DIR/docker-compose.yml ps api-service
         ;;
     *)
         echo "🐳 Agentic AI Customer Support - Docker Management"

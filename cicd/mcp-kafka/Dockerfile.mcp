@@ -8,7 +8,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
 # Copy lightweight requirements for MCP services
-COPY cicd/requirements-mcp.txt ./requirements-mcp.txt
+COPY cicd/mcp-kafka/requirements-mcp.txt ./requirements-mcp.txt
 RUN pip install --no-cache-dir -r requirements-mcp.txt
 
 # Copy the rest of the application code

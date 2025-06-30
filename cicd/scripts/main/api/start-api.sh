@@ -38,7 +38,7 @@ fi
 
 # Start API services
 echo "🔄 Starting API services with Docker Compose..."
-docker-compose -f docker-compose.api.yml up -d
+docker-compose -f docker-compose.yml up -d api-service postgres
 
 echo "⏳ Waiting for services to be ready..."
 sleep 20
@@ -61,5 +61,5 @@ echo "   API Health: http://localhost:8080/health"
 echo "   PostgreSQL: localhost:5432"
 echo "   Redis: localhost:6379"
 echo ""
-echo "📖 View logs: docker-compose -f docker-compose.api.yml logs -f"
+echo "📖 View logs: docker-compose -f docker-compose.yml logs -f api-service"
 echo "🛑 Stop API: ./scripts/main/api/stop-api.sh"

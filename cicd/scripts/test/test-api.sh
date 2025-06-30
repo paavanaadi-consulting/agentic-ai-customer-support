@@ -112,7 +112,7 @@ show_api_info() {
     # Show container status
     echo ""
     echo "🐳 Container Status:"
-    docker-compose -f docker-compose.api.yml ps api-service
+    docker-compose -f docker-compose.yml ps api-service
 }
 
 # Function to run load test
@@ -142,9 +142,9 @@ main() {
     
     # Check if PostgreSQL is running (required for API)
     echo "🗄️  Checking PostgreSQL dependency..."
-    if ! docker-compose -f docker-compose.api.yml ps postgres | grep -q "Up"; then
+    if ! docker-compose -f docker-compose.yml ps postgres | grep -q "Up"; then
         echo "📦 Starting PostgreSQL..."
-        docker-compose -f docker-compose.api.yml up -d postgres
+        docker-compose -f docker-compose.yml up -d postgres
         
         echo "⏳ Waiting for PostgreSQL to be ready..."
         sleep 10
@@ -152,7 +152,7 @@ main() {
         # Wait for PostgreSQL to be healthy
         local attempts=0
         while [ $attempts -lt 30 ]; do
-            if docker-compose -f docker-compose.api.yml exec -T postgres pg_isready -U admin -d customer_support > /dev/null 2>&1; then
+            if docker-compose -f docker-compose.yml exec -T postgres pg_isready -U admin -d customer_support > /dev/null 2>&1; then
                 echo -e "${GREEN}✅ PostgreSQL is ready${NC}"
                 break
             fi
@@ -167,7 +167,7 @@ main() {
     # Start API service
     echo ""
     echo "🚀 Starting API service..."
-    docker-compose -f docker-compose.api.yml up -d api-service
+    docker-compose -f docker-compose.yml up -d api-service
     
     # Wait for API to be ready
     if check_api_health; then
@@ -191,18 +191,18 @@ main() {
         echo "  • Docs: http://localhost:8080/docs"
         echo "  • Health: http://localhost:8080/health"
         echo ""
-        echo "🛑 To stop: docker-compose -f docker-compose.api.yml stop api-service"
-        echo "📋 To view logs: docker-compose -f docker-compose.api.yml logs -f api-service"
+        echo "🛑 To stop: docker-compose -f docker-compose.yml stop api-service"
+        echo "📋 To view logs: docker-compose -f docker-compose.yml logs -f api-service"
         
     else
         echo -e "${RED}❌ API testing failed - service not responding${NC}"
         echo ""
         echo "🔍 Debugging information:"
         echo "Container status:"
-        docker-compose -f docker-compose.api.yml ps api-service
+        docker-compose -f docker-compose.yml ps api-service
         echo ""
         echo "Recent logs:"
-        docker-compose -f docker-compose.api.yml logs --tail=20 api-service
+        docker-compose -f docker-compose.yml logs --tail=20 api-service
         exit 1
     fi
 }

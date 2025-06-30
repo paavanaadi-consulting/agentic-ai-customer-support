@@ -90,7 +90,7 @@ fi
 
 # Check Kafka
 echo -n "📡 Kafka: "
-if docker-compose exec -T kafka /opt/bitnami/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092 > /dev/null 2>&1; then
+if docker-compose exec -T kafka /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092 > /dev/null 2>&1; then
     echo "✅ Healthy"
 else
     echo "❌ Unhealthy"
