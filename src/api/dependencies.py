@@ -5,7 +5,6 @@ This module centralizes the instantiation of services, making it easy
 to manage dependencies and switch implementations (e.g., from in-memory
 to a real database).
 """
-from functools import lru_cache
 
 from ..services.service_factory import (
     get_query_service, get_ticket_service, get_customer_service,

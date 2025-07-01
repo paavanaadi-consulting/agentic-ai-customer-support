@@ -19,6 +19,9 @@ class ServiceFactory:
         self._customer_service = None
         self._feedback_service = None
         self._analytics_service = None
+        
+        # In-memory database for ticket service (only one that needs external db)
+        self._tickets_db = {}
     
     @property
     def query_service(self) -> QueryService:
@@ -31,7 +34,7 @@ class ServiceFactory:
     def ticket_service(self) -> TicketService:
         """Get or create TicketService instance."""
         if self._ticket_service is None:
-            self._ticket_service = TicketService()
+            self._ticket_service = TicketService(self._tickets_db)
         return self._ticket_service
     
     @property
