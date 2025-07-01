@@ -23,7 +23,7 @@ from src.data_sources.kafka_consumer import KafkaConsumer
 from src.mcp.mcp_client import MCPClient
 # from src.mcp.postgres_mcp_wrapper import PostgresMCPWrapper  # REMOVED - use postgres_mcp_client instead
 from src.mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient
-from src.mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
+from src.mcp.kafka_mcp_client import OptimizedKafkaMCPClient
 from src.mcp.aws_mcp_wrapper import AWSMCPWrapper
 from src.utils.logger import setup_logger
 from src.api.api_main import app as create_app
@@ -141,16 +141,20 @@ class EnhancedGeneticAISupport:
             # self.mcp_services['postgres'] = OptimizedPostgreSQLMCPClient()
             pass
             
-        # Initialize Kafka MCP wrapper
+        # Initialize Kafka MCP client
         kafka_cfg = CONFIG.get('mcp_kafka', {})
         if kafka_cfg:
             kafka_servers = kafka_cfg.get('bootstrap_servers', 'localhost:9092')
-            kafka_config = ExternalKafkaMCPConfig(
+            mcp_server_url = kafka_cfg.get('mcp_server_url', 'http://localhost:8002')
+            topic_prefix = kafka_cfg.get('topic_prefix', 'customer-support')
+            group_id = kafka_cfg.get('group_id', 'ai-support-group')
+            
+            self.mcp_services['kafka'] = OptimizedKafkaMCPClient(
                 bootstrap_servers=kafka_servers,
-                topic_name=kafka_cfg.get('topic_name', 'customer-support'),
-                group_id=kafka_cfg.get('group_id', 'ai-support-group')
+                mcp_server_url=mcp_server_url,
+                topic_prefix=topic_prefix,
+                group_id=group_id
             )
-            self.mcp_services['kafka'] = KafkaMCPWrapper(kafka_config)
             
         # Initialize AWS MCP wrapper
         aws_cfg = CONFIG.get('mcp_aws', {})
@@ -165,7 +169,9 @@ class EnhancedGeneticAISupport:
         # Initialize all MCP services
         for name, service in self.mcp_services.items():
             try:
-                if hasattr(service, 'initialize'):
+                if hasattr(service, 'connect'):
+                    await service.connect()
+                elif hasattr(service, 'initialize'):
                     await service.initialize()
                 elif hasattr(service, 'start'):
                     await service.start()

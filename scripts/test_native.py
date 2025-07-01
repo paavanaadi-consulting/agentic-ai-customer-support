@@ -71,15 +71,14 @@ class NativeMCPClient:
             await self.db_connector.connect()
             self.database_server = DatabaseMCPServer(self.db_connector)
         
-        from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
+        from src.mcp.kafka_mcp_client import OptimizedKafkaMCPClient
         from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
         
-        kafka_config = ExternalKafkaMCPConfig(
+        self.kafka_server = OptimizedKafkaMCPClient(
             bootstrap_servers="localhost:9092",
-            topic_name="test-topic",
+            topic_prefix="test",
             group_id="test-group"
         )
-        self.kafka_server = KafkaMCPWrapper(kafka_config)
         
         # Initialize AWS MCP wrapper with configuration
         aws_config = ExternalMCPConfig(

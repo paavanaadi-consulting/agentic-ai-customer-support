@@ -10,19 +10,22 @@ from .customer_service import CustomerService
 from .feedback_service import FeedbackService
 from .analytics_service import AnalyticsService
 from ..mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient, get_optimized_mcp_client
+from ..mcp.kafka_mcp_client import OptimizedKafkaMCPClient, get_optimized_kafka_client
 
 
 class ServiceFactory:
     """Factory class for creating and managing service instances."""
     
     def __init__(self, 
-                 mcp_client: Optional[OptimizedPostgreSQLMCPClient] = None):
+                 mcp_client: Optional[OptimizedPostgreSQLMCPClient] = None,
+                 kafka_mcp_client: Optional[OptimizedKafkaMCPClient] = None):
         self._query_service = None
         self._ticket_service = None
         self._customer_service = None
         self._feedback_service = None
         self._analytics_service = None
         self._mcp_client = mcp_client
+        self._kafka_mcp_client = kafka_mcp_client
         
         # In-memory database fallback (if MCP client not provided)
         self._tickets_db = {}
@@ -31,7 +34,10 @@ class ServiceFactory:
     def query_service(self) -> QueryService:
         """Get or create QueryService instance."""
         if self._query_service is None:
-            self._query_service = QueryService()
+            if self._kafka_mcp_client:
+                self._query_service = QueryService(kafka_client=self._kafka_mcp_client)
+            else:
+                self._query_service = QueryService()
         return self._query_service
     
     @property
@@ -81,35 +87,59 @@ class ServiceFactory:
                 )
         return self._analytics_service
 
+    @property
+    def kafka_client(self) -> Optional[OptimizedKafkaMCPClient]:
+        """Get Kafka MCP client."""
+        return self._kafka_mcp_client
+
 
 # Global service factory instance
 _service_factory: Optional[ServiceFactory] = None
 
 def initialize_service_factory(
-    mcp_client: Optional[OptimizedPostgreSQLMCPClient] = None
+    mcp_client: Optional[OptimizedPostgreSQLMCPClient] = None,
+    kafka_mcp_client: Optional[OptimizedKafkaMCPClient] = None
 ) -> ServiceFactory:
-    """Initialize the global service factory with MCP client."""
+    """Initialize the global service factory with MCP clients."""
     global _service_factory
-    _service_factory = ServiceFactory(mcp_client=mcp_client)
+    _service_factory = ServiceFactory(
+        mcp_client=mcp_client,
+        kafka_mcp_client=kafka_mcp_client
+    )
     return _service_factory
 
 async def initialize_service_factory_with_optimized_mcp_default() -> ServiceFactory:
-    """Initialize the global service factory with default optimized MCP client."""
-    optimized_client = await get_optimized_mcp_client()
-    return initialize_service_factory(mcp_client=optimized_client)
+    """Initialize the global service factory with default optimized MCP clients."""
+    postgres_client = await get_optimized_mcp_client()
+    kafka_client = await get_optimized_kafka_client()
+    return initialize_service_factory(
+        mcp_client=postgres_client,
+        kafka_mcp_client=kafka_client
+    )
 
 async def initialize_service_factory_with_optimized_mcp(
     connection_string: Optional[str] = None,
     mcp_server_url: str = "http://localhost:8001",
-    use_direct_connection: bool = True
+    use_direct_connection: bool = True,
+    kafka_bootstrap_servers: str = "localhost:9092",
+    kafka_mcp_server_url: str = "http://localhost:8002",
+    kafka_topic_prefix: str = "customer-support"
 ) -> ServiceFactory:
-    """Initialize the global service factory with optimized MCP client."""
-    optimized_client = await get_optimized_mcp_client(
+    """Initialize the global service factory with optimized MCP clients."""
+    postgres_client = await get_optimized_mcp_client(
         connection_string=connection_string,
         mcp_server_url=mcp_server_url,
         use_direct_connection=use_direct_connection
     )
-    return initialize_service_factory(mcp_client=optimized_client)
+    kafka_client = await get_optimized_kafka_client(
+        bootstrap_servers=kafka_bootstrap_servers,
+        mcp_server_url=kafka_mcp_server_url,
+        topic_prefix=kafka_topic_prefix
+    )
+    return initialize_service_factory(
+        mcp_client=postgres_client,
+        kafka_mcp_client=kafka_client
+    )
 
 @lru_cache()
 def get_service_factory() -> ServiceFactory:
@@ -145,3 +175,13 @@ def get_feedback_service() -> FeedbackService:
 def get_analytics_service() -> AnalyticsService:
     """Get AnalyticsService instance."""
     return get_service_factory().analytics_service
+
+
+def get_kafka_client() -> Optional[OptimizedKafkaMCPClient]:
+    """Get Kafka MCP client instance."""
+    return get_service_factory().kafka_client
+
+
+def get_postgres_client() -> Optional[OptimizedPostgreSQLMCPClient]:
+    """Get PostgreSQL MCP client instance."""
+    return get_service_factory().mcp_client

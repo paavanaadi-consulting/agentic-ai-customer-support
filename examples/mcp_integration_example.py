@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # Import MCP components
 # from mcp.postgres_mcp_wrapper import PostgresMCPWrapper  # REMOVED - use postgres_mcp_client instead
 from src.mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient
-from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
+from src.mcp.kafka_mcp_client import OptimizedKafkaMCPClient
 from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
 from src.mcp.mcp_client_manager import MCPClientManager
 
@@ -43,16 +43,18 @@ class CustomerSupportMCPOrchestrator:
             await self.db_server.initialize()
             logger.info("Database MCP wrapper started")
             
-            # Initialize Kafka MCP Server
+            # Initialize Kafka MCP Client
             kafka_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-            kafka_config = ExternalKafkaMCPConfig(
+            mcp_server_url = os.getenv("KAFKA_MCP_SERVER_URL", "http://localhost:8002")
+            
+            self.kafka_server = OptimizedKafkaMCPClient(
                 bootstrap_servers=kafka_servers,
-                topic_name="example-topic",
+                mcp_server_url=mcp_server_url,
+                topic_prefix="example",
                 group_id="example-group"
             )
-            self.kafka_server = KafkaMCPWrapper(kafka_config)
-            await self.kafka_server.initialize()
-            logger.info("Kafka MCP server started")
+            await self.kafka_server.connect()
+            logger.info("Kafka MCP client connected")
             
             # Initialize AWS MCP Wrapper
             aws_config = ExternalMCPConfig(

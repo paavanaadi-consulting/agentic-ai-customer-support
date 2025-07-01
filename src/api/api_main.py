@@ -14,6 +14,7 @@ import time
 
 from config.env_settings import CONFIG
 from src.api.routes import router as api_router
+from src.api.kafka_routes import router as kafka_router
 from src.services.service_factory import (
     initialize_service_factory_with_optimized_mcp,
     initialize_service_factory_with_optimized_mcp_default,
@@ -167,6 +168,7 @@ async def health_check():
 
 # Include routers
 app.include_router(api_router, prefix="/api/v1", tags=["api"])
+app.include_router(kafka_router, prefix="/api/v1", tags=["kafka", "streaming"])
 
 @app.get("/")
 async def root():

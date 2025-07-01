@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 # Import MCP servers
 # from mcp.postgres_mcp_wrapper import PostgresMCPWrapper  # REMOVED
-from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
+from src.mcp.kafka_mcp_client import OptimizedKafkaMCPClient
 from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
 from data_sources.rdbms_connector import RDBMSConnector
 
@@ -106,18 +106,17 @@ class MCPServerManager:
             return True
         
         try:
-            logger.info("Starting Kafka MCP server...")
+            logger.info("Starting Kafka MCP client...")
             
-            kafka_config = ExternalKafkaMCPConfig(
+            server = OptimizedKafkaMCPClient(
                 bootstrap_servers=self.config["kafka"]["bootstrap_servers"],
-                topic_name=self.config["kafka"].get("topic_name", "default-topic"),
+                topic_prefix=self.config["kafka"].get("topic_prefix", "default"),
                 group_id=self.config["kafka"].get("group_id", "mcp-group")
             )
-            server = KafkaMCPWrapper(kafka_config)
-            await server.start()
+            await server.connect()
             
             self.servers["kafka"] = server
-            logger.info(f"Kafka MCP server started on port {self.config['kafka']['port']}")
+            logger.info(f"Kafka MCP client connected")
             return True
             
         except Exception as e:
