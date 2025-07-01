@@ -13,9 +13,9 @@ from ..api.schemas import (
 class TicketService:
     """Service class for handling ticket-related business logic."""
     
-    def __init__(self):
-        # In-memory storage for demo purposes (replace with database in production)
-        self.tickets_db = {}
+    def __init__(self, db: dict):
+        """Initializes the service with a database connection/session."""
+        self.tickets_db = db
     
     async def create_ticket(self, request: TicketRequest) -> TicketResponse:
         """
