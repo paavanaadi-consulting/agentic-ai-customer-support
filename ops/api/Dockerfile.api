@@ -23,13 +23,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements-api.txt
 
 # Copy only API-related files
-COPY api/ ./api/
+COPY src/api/ ./src/api/
+COPY src/services/ ./src/services/
 COPY config/ ./config/
-COPY integration/ ./integration/
 COPY src/utils/ ./src/utils/
 
 # Create a minimal main file for API-only deployment
-COPY api/api_main.py ./main.py
+COPY src/api/api_main.py ./main.py
 
 # Create necessary directories
 RUN mkdir -p /app/logs

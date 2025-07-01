@@ -5,7 +5,7 @@ set -e
 
 echo "🧪 Testing API Component..."
 
-# Change to cicd directory (we're in scripts/test subfolder)
+# Change to ops directory (we're in scripts/test subfolder)
 cd "$(dirname "$0")/../.."
 
 # Colors for output

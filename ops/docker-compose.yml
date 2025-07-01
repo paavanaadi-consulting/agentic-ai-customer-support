@@ -337,3 +337,7 @@ volumes:
   pgdata:
   redisdata:
   kafka_data:
+
+networks:
+  customer_support_network:
+    driver: bridge

@@ -5,7 +5,7 @@ set -e  # Exit on any error
 
 echo "🚀 Starting API Component..."
 
-# Change to cicd directory (we're in scripts/main/api subfolder)
+# Change to ops directory (we're in scripts/main/api subfolder)
 cd "$(dirname "$0")/../../.."
 
 # Check if Docker is running

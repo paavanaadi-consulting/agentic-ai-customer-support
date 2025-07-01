@@ -87,6 +87,7 @@ class CustomerResponse(BaseModel):
     phone: Optional[str] = Field(None, description="Customer phone")
     company: Optional[str] = Field(None, description="Customer company")
     created_at: datetime = Field(..., description="Creation timestamp")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Customer metadata")
     ticket_count: int = Field(0, description="Number of tickets")
     last_interaction: Optional[datetime] = Field(None, description="Last interaction timestamp")
 
@@ -95,6 +96,8 @@ class FeedbackResponse(BaseModel):
     customer_id: str = Field(..., description="Customer identifier")
     rating: int = Field(..., description="Rating from 1 to 5")
     comment: Optional[str] = Field(None, description="Feedback comment")
+    query_id: Optional[str] = Field(None, description="Related query ID")
+    ticket_id: Optional[str] = Field(None, description="Related ticket ID")
     created_at: datetime = Field(..., description="Creation timestamp")
 
 class AnalyticsResponse(BaseModel):
@@ -105,6 +108,9 @@ class AnalyticsResponse(BaseModel):
     avg_rating: float = Field(..., description="Average customer rating")
     tickets_by_status: Dict[str, int] = Field(..., description="Tickets grouped by status")
     queries_by_type: Dict[str, int] = Field(..., description="Queries grouped by type")
+    customer_satisfaction_rate: Optional[float] = Field(None, description="Customer satisfaction rate")
+    resolution_rate: Optional[float] = Field(None, description="Ticket resolution rate")
+    additional_metrics: Optional[Dict[str, Any]] = Field(None, description="Additional system metrics")
 
 # Generic Response Models
 class ErrorResponse(BaseModel):
