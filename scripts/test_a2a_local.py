@@ -26,7 +26,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Import A2A components
-from a2a_protocol.base_a2a_agent import A2AAgent, A2AMessage
+from src.a2a_protocol.base_a2a_agent import A2AAgent, A2AMessage
 from mcp.mcp_client import MCPClientManager
 
 

@@ -1,4 +1,4 @@
-from data_sources.vector_db_client import VectorDBClient
+from src.data_sources.vector_db_client import VectorDBClient
 import pytest
 
 @pytest.mark.asyncio

@@ -1,4 +1,4 @@
-from data_sources.pdf_processor import PDFProcessor
+from src.data_sources.pdf_processor import PDFProcessor
 import pytest
 
 @pytest.mark.asyncio

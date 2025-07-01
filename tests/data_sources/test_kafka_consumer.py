@@ -1,4 +1,4 @@
-from data_sources.kafka_consumer import KafkaConsumer
+from src.data_sources.kafka_consumer import KafkaConsumer
 import pytest
 
 @pytest.mark.asyncio

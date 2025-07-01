@@ -1,0 +1,86 @@
+# Docker Ignore File
+# Prevents unnecessary files from being copied to Docker build context
+
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Data directories (may contain large files)
+data/
+qdrant_data/
+
+# Temporary files
+tmp/
+temp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Documentation
+docs/
+*.md
+README.md
+
+# Examples and tests (for production builds)
+examples/
+tests/
+
+# Scripts (for production builds)
+scripts/
+
+# Environment files (should be mounted as volumes)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Node modules (if any)
+node_modules/
+
+# Requirements files not needed in container
+requirements.txt
+requirements-local.txt
+
+# CI/CD files (except the ones we need)
+ops/build.sh
+ops/start.sh
+ops/stop.sh
+ops/cleanup.sh
+ops/README.md

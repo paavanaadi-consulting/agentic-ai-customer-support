@@ -1,0 +1,17 @@
+# Dockerfile for the MCP services (mcp-database, mcp-kafka, mcp-aws)
+FROM python:3.11-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Install git client, which is required for installing packages from git repositories
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+
+# Copy lightweight requirements for MCP services
+COPY ops/mcp-kafka/requirements-mcp.txt ./requirements-mcp.txt
+RUN pip install --no-cache-dir -r requirements-mcp.txt
+
+# Copy the rest of the application code
+COPY . .
+
+# The command to run the services is specified in docker-compose.yml, so no CMD is needed here.

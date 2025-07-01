@@ -19,7 +19,7 @@ from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
 from mcp.mcp_client import MCPClientManager
 
 # Import data sources
-from data_sources.rdbms_connector import RDBMSConnector
+from src.data_sources.rdbms_connector import RDBMSConnector
 
 
 class CustomerSupportMCPOrchestrator:

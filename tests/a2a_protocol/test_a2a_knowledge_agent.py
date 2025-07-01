@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
+from src.a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
 
 @pytest.mark.asyncio
 async def test_a2a_knowledge_agent_process_task():

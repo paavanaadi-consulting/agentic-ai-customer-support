@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from a2a_protocol.a2a_coordinator import A2ACoordinator
+from src.a2a_protocol.a2a_coordinator import A2ACoordinator
 
 @pytest.mark.asyncio
 async def test_a2a_coordinator_init():

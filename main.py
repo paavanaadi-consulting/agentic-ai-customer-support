@@ -11,21 +11,21 @@ from typing import Dict, Any, Optional, List
 from pathlib import Path
 
 from config.settings import CONFIG
-from core.evolution_engine import EvolutionEngine
-from a2a_protocol.a2a_query_agent import A2AQueryAgent
-from a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
-from a2a_protocol.a2a_response_agent import A2AResponseAgent
-from a2a_protocol.a2a_coordinator import A2ACoordinator
-from integration.database_service import DatabaseService
-from data_sources.pdf_processor import PDFProcessor
-from data_sources.vector_db_client import VectorDBClient
-from data_sources.kafka_consumer import KafkaConsumer
-from mcp.mcp_client import MCPClient
-from mcp.postgres_mcp_wrapper import PostgresMCPWrapper
-from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
-from mcp.aws_mcp_wrapper import AWSMCPWrapper
-from utils.logger import setup_logger
-from api.routes import create_app
+from src.geneticML.engines.evolution_engine import EvolutionEngine
+from src.a2a_protocol.a2a_query_agent import A2AQueryAgent
+from src.a2a_protocol.a2a_knowledge_agent import A2AKnowledgeAgent
+from src.a2a_protocol.a2a_response_agent import A2AResponseAgent
+from src.a2a_protocol.a2a_coordinator import A2ACoordinator
+from src.integration.database_service import DatabaseService
+from src.data_sources.pdf_processor import PDFProcessor
+from src.data_sources.vector_db_client import VectorDBClient
+from src.data_sources.kafka_consumer import KafkaConsumer
+from src.mcp.mcp_client import MCPClient
+from src.mcp.postgres_mcp_wrapper import PostgresMCPWrapper
+from src.mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
+from src.mcp.aws_mcp_wrapper import AWSMCPWrapper
+from src.utils.logger import setup_logger
+from src.api.api_main import app as create_app
 
 class EnhancedGeneticAISupport:
     """Enhanced main orchestrator with full database integration"""
@@ -152,7 +152,7 @@ class EnhancedGeneticAISupport:
         # Initialize AWS MCP wrapper
         aws_cfg = CONFIG.get('mcp_aws', {})
         if aws_cfg:
-            from mcp.aws_mcp_wrapper import ExternalMCPConfig
+            from src.mcp.aws_mcp_wrapper import ExternalMCPConfig
             aws_config = ExternalMCPConfig(
                 aws_profile=aws_cfg.get('profile', 'default'),
                 aws_region=aws_cfg.get('region', 'us-east-1')

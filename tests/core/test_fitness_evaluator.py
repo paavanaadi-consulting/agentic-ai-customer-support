@@ -1,4 +1,4 @@
-from core.fitness_evaluator import FitnessEvaluator
+from src.geneticML.evaluators.fitness_evaluator import FitnessEvaluator
 
 def test_fitness_evaluator_basic():
     evaluator = FitnessEvaluator()

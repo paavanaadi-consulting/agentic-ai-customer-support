@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from a2a_protocol.a2a_query_agent import A2AQueryAgent
+from src.a2a_protocol.a2a_query_agent import A2AQueryAgent
 
 @pytest.mark.asyncio
 async def test_a2a_query_agent_process_task():

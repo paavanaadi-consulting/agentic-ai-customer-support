@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, Mock
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from a2a_protocol.base_a2a_agent import A2AAgent, A2AMessage
+from src.a2a_protocol.base_a2a_agent import A2AAgent, A2AMessage
 from scripts.test_a2a_local import TestQueryAgent, TestKnowledgeAgent, TestResponseAgent
 
 class TestA2AIntegration:

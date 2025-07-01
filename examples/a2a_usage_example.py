@@ -2,7 +2,7 @@
 Example showing how to use the A2A-enabled system
 """
 import asyncio
-from a2a_protocol.simplified_main import SimplifiedGeneticAISystem
+from src.a2a_protocol.simplified_main import SimplifiedGeneticAISystem
 
 async def main():
     """Example of using the simplified A2A system"""

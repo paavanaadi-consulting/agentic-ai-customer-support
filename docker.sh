@@ -1,7 +1,7 @@
 #!/bin/bash
 # Main deployment script - delegates to CI/CD scripts
 
-CICD_DIR="./cicd"
+CICD_DIR="./ops"
 
 case "$1" in
     "build")

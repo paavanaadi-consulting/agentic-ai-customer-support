@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from utils import llm_client
+from src.utils import llm_client
 
 @pytest.mark.asyncio
 async def test_call_chatgpt(monkeypatch):

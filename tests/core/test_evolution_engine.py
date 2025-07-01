@@ -1,4 +1,4 @@
-from core.evolution_engine import EvolutionEngine
+from src.geneticML.engines.evolution_engine import EvolutionEngine
 
 class DummyAgent:
     def __init__(self, agent_id):

@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from api.routes import create_app
+from src.api.routes import create_app
 
 @pytest.fixture
 def client():
