@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: agentic-ai-customer-support-base
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - postgres.yaml
+  - kafka.yaml
+  - qdrant.yaml
+  - api-deployment.yaml
+  - api-service.yaml
+  - mcp-postgres-deployment.yaml
+  - mcp-postgres-service.yaml
+  - mcp-kafka-deployment.yaml
+  - mcp-kafka-service.yaml
+  - consumer-deployment.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - network-policy.yaml
+  - pod-disruption-budget.yaml
+
+commonLabels:
+  app.kubernetes.io/name: agentic-ai-customer-support
+  app.kubernetes.io/version: "1.0.0"
+
+images:
+  - name: agentic-ai-api
+    newTag: latest
+  - name: agentic-ai-mcp-postgres
+    newTag: latest
+  - name: agentic-ai-mcp-kafka
+    newTag: latest
+  - name: agentic-ai-consumer
+    newTag: latest

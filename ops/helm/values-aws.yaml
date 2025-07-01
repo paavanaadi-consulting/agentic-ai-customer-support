@@ -1,0 +1,77 @@
+# AWS-specific values for agentic-ai-customer-support
+# Use with: helm install -f values-aws.yaml
+
+# Cloud provider settings
+cloudProvider:
+  aws:
+    enabled: true
+
+# Global settings for AWS
+global:
+  storageClass: "gp3"
+
+# API service with ALB annotations
+api:
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+
+# PostgreSQL with EBS storage
+postgresql:
+  primary:
+    persistence:
+      storageClass: "gp3"
+      size: 20Gi
+    nodeSelector:
+      kubernetes.io/arch: amd64
+
+# Kafka with EBS storage
+kafka:
+  persistence:
+    storageClass: "gp3"
+    size: 50Gi
+  zookeeper:
+    persistence:
+      storageClass: "gp3"
+
+# Qdrant with EBS storage
+qdrant:
+  persistence:
+    storageClass: "gp3"
+    size: 30Gi
+
+# Ingress with ALB
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/success-codes: '200'
+
+# Pod node affinity for AWS zones
+nodeSelector:
+  kubernetes.io/arch: amd64
+
+# Pod anti-affinity for high availability across AZs
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - agentic-ai-customer-support
+        topologyKey: topology.kubernetes.io/zone

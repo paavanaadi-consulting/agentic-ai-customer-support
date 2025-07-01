@@ -1,0 +1,62 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: agentic-ai-storage
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: pd.csi.storage.gke.io
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: pd-ssd
+  replication-type: regional-pd
+  fstype: ext4
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv-gcp
+  labels:
+    app: postgres
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: agentic-ai-storage
+  gcePersistentDisk:
+    pdName: postgres-disk  # Replace with actual GCP disk name
+    fsType: ext4
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kafka-pv-gcp
+  labels:
+    app: kafka
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: agentic-ai-storage
+  gcePersistentDisk:
+    pdName: kafka-disk  # Replace with actual GCP disk name
+    fsType: ext4
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qdrant-pv-gcp
+  labels:
+    app: qdrant
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: agentic-ai-storage
+  gcePersistentDisk:
+    pdName: qdrant-disk  # Replace with actual GCP disk name
+    fsType: ext4

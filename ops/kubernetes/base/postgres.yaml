@@ -1,0 +1,190 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: agentic-ai-support
+  labels:
+    app.kubernetes.io/component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/component: database
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_PASSWORD
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-init
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+      - name: postgres-init
+        configMap:
+          name: postgres-init-scripts
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: agentic-ai-support
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: agentic-ai-support
+  labels:
+    app.kubernetes.io/component: database
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  selector:
+    app.kubernetes.io/name: postgres
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: agentic-ai-support
+data:
+  01-init.sql: |
+    -- Initialize customer support database
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+    
+    -- Create tables if they don't exist
+    CREATE TABLE IF NOT EXISTS customer_queries (
+        query_id VARCHAR(255) PRIMARY KEY,
+        customer_id VARCHAR(255) NOT NULL,
+        query_text TEXT NOT NULL,
+        priority VARCHAR(50) DEFAULT 'normal',
+        category VARCHAR(100) DEFAULT 'general',
+        context JSONB DEFAULT '{}',
+        metadata JSONB DEFAULT '{}',
+        status VARCHAR(50) DEFAULT 'received',
+        received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        kafka_offset BIGINT,
+        kafka_partition INTEGER,
+        kafka_timestamp BIGINT
+    );
+    
+    CREATE TABLE IF NOT EXISTS agent_responses (
+        response_id VARCHAR(255) PRIMARY KEY,
+        query_id VARCHAR(255) NOT NULL,
+        agent_id VARCHAR(255),
+        response_text TEXT NOT NULL,
+        confidence FLOAT DEFAULT 0.0,
+        processing_time FLOAT,
+        model_used VARCHAR(100),
+        tokens_used INTEGER,
+        response_type VARCHAR(50) DEFAULT 'text',
+        metadata JSONB DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        kafka_offset BIGINT,
+        kafka_partition INTEGER,
+        kafka_timestamp BIGINT
+    );
+    
+    CREATE TABLE IF NOT EXISTS support_tickets (
+        ticket_id VARCHAR(255) PRIMARY KEY,
+        customer_id VARCHAR(255) NOT NULL,
+        query_id VARCHAR(255),
+        title VARCHAR(500),
+        description TEXT,
+        priority VARCHAR(50) DEFAULT 'normal',
+        status VARCHAR(50) DEFAULT 'open',
+        category VARCHAR(100),
+        assigned_agent VARCHAR(255),
+        tags JSONB DEFAULT '[]',
+        metadata JSONB DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        kafka_offset BIGINT,
+        kafka_partition INTEGER,
+        kafka_timestamp BIGINT
+    );
+    
+    CREATE TABLE IF NOT EXISTS analytics_events (
+        event_id VARCHAR(255) PRIMARY KEY,
+        event_type VARCHAR(100) NOT NULL,
+        customer_id VARCHAR(255),
+        session_id VARCHAR(255),
+        query_id VARCHAR(255),
+        agent_id VARCHAR(255),
+        event_data JSONB DEFAULT '{}',
+        user_agent TEXT,
+        ip_address INET,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        kafka_offset BIGINT,
+        kafka_partition INTEGER,
+        kafka_timestamp BIGINT
+    );
+    
+    -- Create indexes
+    CREATE INDEX IF NOT EXISTS idx_customer_queries_customer_id ON customer_queries(customer_id);
+    CREATE INDEX IF NOT EXISTS idx_customer_queries_status ON customer_queries(status);
+    CREATE INDEX IF NOT EXISTS idx_agent_responses_query_id ON agent_responses(query_id);
+    CREATE INDEX IF NOT EXISTS idx_support_tickets_customer_id ON support_tickets(customer_id);
+    CREATE INDEX IF NOT EXISTS idx_analytics_events_customer_id ON analytics_events(customer_id);

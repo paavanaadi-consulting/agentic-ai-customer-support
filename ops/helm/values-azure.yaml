@@ -1,0 +1,85 @@
+# Azure-specific values for agentic-ai-customer-support
+# Use with: helm install -f values-azure.yaml
+
+# Cloud provider settings
+cloudProvider:
+  azure:
+    enabled: true
+
+# Global settings for Azure
+global:
+  storageClass: "managed-premium"
+
+# API service with Azure LB annotations
+api:
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+      service.beta.kubernetes.io/azure-pip-name: "agentic-ai-api-pip"
+      service.beta.kubernetes.io/azure-dns-label-name: "agentic-ai-api"
+
+# PostgreSQL with Azure Disk storage
+postgresql:
+  primary:
+    persistence:
+      storageClass: "managed-premium"
+      size: 20Gi
+    nodeSelector:
+      kubernetes.io/arch: amd64
+
+# Kafka with Azure Disk storage
+kafka:
+  persistence:
+    storageClass: "managed-premium"
+    size: 50Gi
+  zookeeper:
+    persistence:
+      storageClass: "managed-premium"
+
+# Qdrant with Azure Disk storage
+qdrant:
+  persistence:
+    storageClass: "managed-premium"
+    size: 30Gi
+
+# Ingress with Application Gateway
+ingress:
+  enabled: true
+  className: "azure/application-gateway"
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    appgw.ingress.kubernetes.io/use-private-ip: "false"
+    appgw.ingress.kubernetes.io/backend-path-prefix: "/"
+    appgw.ingress.kubernetes.io/health-probe-path: "/health"
+    appgw.ingress.kubernetes.io/health-probe-interval: "30"
+    appgw.ingress.kubernetes.io/health-probe-timeout: "5"
+    appgw.ingress.kubernetes.io/health-probe-unhealthy-threshold: "3"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+
+# Pod node affinity for Azure availability zones
+nodeSelector:
+  kubernetes.io/arch: amd64
+
+# Pod anti-affinity for high availability across zones
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - agentic-ai-customer-support
+        topologyKey: topology.kubernetes.io/zone
+
+# Azure-specific security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+  seccompProfile:
+    type: RuntimeDefault

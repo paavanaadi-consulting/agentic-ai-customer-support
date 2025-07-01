@@ -1,0 +1,58 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: agentic-ai-support
+
+resources:
+  - ../../base
+
+patchesStrategicMerge:
+  - storageclass-patch.yaml
+  - ingress-patch.yaml
+  - service-patch.yaml
+
+patches:
+  - target:
+      kind: Deployment
+      name: postgres
+    patch: |-
+      - op: add
+        path: /metadata/annotations/eks.amazonaws.com~1role-arn
+        value: "arn:aws:iam::ACCOUNT_ID:role/postgres-service-role"
+  - target:
+      kind: Deployment
+      name: kafka
+    patch: |-
+      - op: add
+        path: /metadata/annotations/eks.amazonaws.com~1role-arn
+        value: "arn:aws:iam::ACCOUNT_ID:role/kafka-service-role"
+
+configMapGenerator:
+  - name: aws-config
+    literals:
+      - AWS_REGION=us-west-2
+      - AWS_AVAILABILITY_ZONES=us-west-2a,us-west-2b,us-west-2c
+      - STORAGE_CLASS=gp3
+      - LOAD_BALANCER_TYPE=application
+
+secretGenerator:
+  - name: aws-secrets
+    literals:
+      - AWS_ACCESS_KEY_ID=change-me
+      - AWS_SECRET_ACCESS_KEY=change-me
+
+replicas:
+  - name: api-deployment
+    count: 3
+  - name: postgres
+    count: 1
+  - name: kafka
+    count: 3
+
+images:
+  - name: api
+    newTag: latest
+  - name: postgres
+    newTag: 15-alpine
+  - name: kafka
+    newTag: 7.4.0

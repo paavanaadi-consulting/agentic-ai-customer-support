@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agentic-ai-ingress
+  namespace: agentic-ai-support
+  annotations:
+    kubernetes.io/ingress.class: gce
+    kubernetes.io/ingress.global-static-ip-name: agentic-ai-ip
+    networking.gke.io/managed-certificates: agentic-ai-ssl-cert
+    kubernetes.io/ingress.allow-http: "false"
+    ingress.gcp.kubernetes.io/load-balancer-type: "External"
+spec:
+  rules:
+    - host: api.agentic-ai-support.com  # Replace with your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 8000
+          - path: /mcp/postgres
+            pathType: Prefix
+            backend:
+              service:
+                name: mcp-postgres-service
+                port:
+                  number: 8001
+          - path: /mcp/kafka
+            pathType: Prefix
+            backend:
+              service:
+                name: mcp-kafka-service
+                port:
+                  number: 8002
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: agentic-ai-ssl-cert
+  namespace: agentic-ai-support
+spec:
+  domains:
+    - api.agentic-ai-support.com

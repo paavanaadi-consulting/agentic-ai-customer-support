@@ -1,0 +1,232 @@
+# Default values for agentic-ai-customer-support.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Application settings
+app:
+  name: agentic-ai-customer-support
+  version: "1.0.0"
+
+# API service configuration
+api:
+  replicaCount: 3
+  image:
+    repository: agentic-ai/api
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  env:
+    LOG_LEVEL: "INFO"
+
+# MCP Postgres service
+mcpPostgres:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: agentic-ai/mcp-postgres
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8001
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# MCP Kafka service
+mcpKafka:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: agentic-ai/mcp-kafka
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8002
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Consumer service
+consumer:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: agentic-ai/consumer
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8003
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "change-me"
+    username: "agenticai"
+    password: "change-me"
+    database: "customer_support"
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Kafka configuration
+kafka:
+  enabled: true
+  replicaCount: 3
+  persistence:
+    enabled: true
+    size: 50Gi
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  zookeeper:
+    replicaCount: 3
+    persistence:
+      enabled: true
+      size: 8Gi
+
+# Qdrant vector database
+qdrant:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: qdrant/qdrant
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 6333
+  persistence:
+    enabled: true
+    size: 30Gi
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: api.agentic-ai-support.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api
+        - path: /mcp/postgres
+          pathType: Prefix
+          service: mcp-postgres
+        - path: /mcp/kafka
+          pathType: Prefix
+          service: mcp-kafka
+        - path: /consumer
+          pathType: Prefix
+          service: consumer
+  tls:
+    - secretName: agentic-ai-tls-secret
+      hosts:
+        - api.agentic-ai-support.com
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+
+# Pod disruption budgets
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Network policies
+networkPolicy:
+  enabled: true
+
+# Monitoring
+monitoring:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+  prometheusRule:
+    enabled: false
+
+# Cloud provider specific settings
+cloudProvider:
+  aws:
+    enabled: false
+    storageClass: "gp3"
+    loadBalancerType: "nlb"
+    annotations: {}
+  azure:
+    enabled: false
+    storageClass: "managed-premium"
+    loadBalancerSku: "Standard"
+    annotations: {}
+  gcp:
+    enabled: false
+    storageClass: "ssd"
+    loadBalancerType: "External"
+    annotations: {}

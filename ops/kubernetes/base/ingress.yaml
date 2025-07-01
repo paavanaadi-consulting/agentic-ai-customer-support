@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agentic-ai-ingress
+  namespace: agentic-ai-support
+  labels:
+    app: agentic-ai-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.agentic-ai-support.com
+      secretName: agentic-ai-tls-secret
+  rules:
+    - host: api.agentic-ai-support.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 8000
+          - path: /mcp/postgres
+            pathType: Prefix
+            backend:
+              service:
+                name: mcp-postgres-service
+                port:
+                  number: 8001
+          - path: /mcp/kafka
+            pathType: Prefix
+            backend:
+              service:
+                name: mcp-kafka-service
+                port:
+                  number: 8002
+          - path: /consumer
+            pathType: Prefix
+            backend:
+              service:
+                name: consumer-service
+                port:
+                  number: 8003

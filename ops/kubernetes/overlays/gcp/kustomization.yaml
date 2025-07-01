@@ -1,0 +1,58 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: agentic-ai-support
+
+resources:
+  - ../../base
+
+patchesStrategicMerge:
+  - storageclass-patch.yaml
+  - ingress-patch.yaml
+  - service-patch.yaml
+
+patches:
+  - target:
+      kind: Deployment
+      name: postgres
+    patch: |-
+      - op: add
+        path: /metadata/annotations/iam.gke.io~1gcp-service-account
+        value: "postgres-sa@PROJECT_ID.iam.gserviceaccount.com"
+  - target:
+      kind: Deployment
+      name: kafka
+    patch: |-
+      - op: add
+        path: /metadata/annotations/iam.gke.io~1gcp-service-account
+        value: "kafka-sa@PROJECT_ID.iam.gserviceaccount.com"
+
+configMapGenerator:
+  - name: gcp-config
+    literals:
+      - GCP_PROJECT_ID=your-project-id
+      - GCP_REGION=us-central1
+      - GCP_ZONE=us-central1-a
+      - STORAGE_CLASS=ssd
+      - LOAD_BALANCER_TYPE=External
+
+secretGenerator:
+  - name: gcp-secrets
+    literals:
+      - GCP_SERVICE_ACCOUNT_KEY=change-me
+
+replicas:
+  - name: api-deployment
+    count: 3
+  - name: postgres
+    count: 1
+  - name: kafka
+    count: 3
+
+images:
+  - name: api
+    newTag: latest
+  - name: postgres
+    newTag: 15-alpine
+  - name: kafka
+    newTag: 7.4.0

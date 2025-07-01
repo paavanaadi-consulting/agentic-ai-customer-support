@@ -1,0 +1,69 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: agentic-ai-storage
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: disk.csi.azure.com
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  skuName: Premium_LRS
+  kind: Managed
+  cachingmode: ReadOnly
+  fsType: ext4
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv-azure
+  labels:
+    app: postgres
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: agentic-ai-storage
+  azureDisk:
+    diskName: postgres-disk  # Replace with actual Azure disk name
+    diskURI: /subscriptions/SUBSCRIPTION_ID/resourceGroups/RESOURCE_GROUP/providers/Microsoft.Compute/disks/postgres-disk
+    kind: Managed
+    fsType: ext4
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kafka-pv-azure
+  labels:
+    app: kafka
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: agentic-ai-storage
+  azureDisk:
+    diskName: kafka-disk  # Replace with actual Azure disk name
+    diskURI: /subscriptions/SUBSCRIPTION_ID/resourceGroups/RESOURCE_GROUP/providers/Microsoft.Compute/disks/kafka-disk
+    kind: Managed
+    fsType: ext4
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qdrant-pv-azure
+  labels:
+    app: qdrant
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: agentic-ai-storage
+  azureDisk:
+    diskName: qdrant-disk  # Replace with actual Azure disk name
+    diskURI: /subscriptions/SUBSCRIPTION_ID/resourceGroups/RESOURCE_GROUP/providers/Microsoft.Compute/disks/qdrant-disk
+    kind: Managed
+    fsType: ext4

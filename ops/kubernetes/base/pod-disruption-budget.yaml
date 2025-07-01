@@ -1,0 +1,54 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-pdb
+  namespace: agentic-ai-support
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: agentic-ai-support
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: postgres
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kafka-pdb
+  namespace: agentic-ai-support
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: kafka
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: qdrant-pdb
+  namespace: agentic-ai-support
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: qdrant
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: consumer-pdb
+  namespace: agentic-ai-support
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: consumer

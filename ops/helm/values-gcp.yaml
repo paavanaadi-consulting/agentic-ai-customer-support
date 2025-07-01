@@ -1,0 +1,86 @@
+# GCP-specific values for agentic-ai-customer-support
+# Use with: helm install -f values-gcp.yaml
+
+# Cloud provider settings
+cloudProvider:
+  gcp:
+    enabled: true
+
+# Global settings for GCP
+global:
+  storageClass: "ssd"
+
+# API service with GCP LB annotations
+api:
+  service:
+    type: LoadBalancer
+    annotations:
+      cloud.google.com/load-balancer-type: External
+      networking.gke.io/load-balancer-type: External
+
+# PostgreSQL with GCP persistent disk storage
+postgresql:
+  primary:
+    persistence:
+      storageClass: "ssd"
+      size: 20Gi
+    nodeSelector:
+      kubernetes.io/arch: amd64
+
+# Kafka with GCP persistent disk storage
+kafka:
+  persistence:
+    storageClass: "ssd"
+    size: 50Gi
+  zookeeper:
+    persistence:
+      storageClass: "ssd"
+
+# Qdrant with GCP persistent disk storage
+qdrant:
+  persistence:
+    storageClass: "ssd"
+    size: 30Gi
+
+# Ingress with GCP Global Load Balancer
+ingress:
+  enabled: true
+  className: "gce"
+  annotations:
+    kubernetes.io/ingress.class: gce
+    kubernetes.io/ingress.global-static-ip-name: "agentic-ai-ip"
+    networking.gke.io/managed-certificates: "agentic-ai-ssl-cert"
+    kubernetes.io/ingress.allow-http: "false"
+    ingress.gcp.kubernetes.io/load-balancer-type: "External"
+
+# Pod node affinity for GCP zones
+nodeSelector:
+  kubernetes.io/arch: amd64
+
+# Pod anti-affinity for high availability across zones
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - agentic-ai-customer-support
+        topologyKey: topology.kubernetes.io/zone
+
+# GCP-specific workload identity
+serviceAccount:
+  create: true
+  annotations:
+    iam.gke.io/gcp-service-account: "agentic-ai-gsa@PROJECT_ID.iam.gserviceaccount.com"
+
+# GCP-specific security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+  seccompProfile:
+    type: RuntimeDefault
