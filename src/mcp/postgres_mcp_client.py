@@ -1,7 +1,7 @@
 """
-Optimized PostgreSQL MCP Client
-Combines the functionality of postgres_mcp_wrapper and data_sources/mcp_client
-Provides a unified, efficient interface for PostgreSQL operations via MCP
+PostgreSQL MCP Client
+Provides optimized PostgreSQL operations via MCP with multiple fallback strategies.
+Combines direct connection, HTTP communication, and advanced customer support features.
 """
 import asyncio
 import json

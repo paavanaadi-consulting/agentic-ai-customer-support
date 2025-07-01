@@ -19,7 +19,7 @@ from src.services.service_factory import (
     initialize_service_factory_with_optimized_mcp_default,
     initialize_service_factory
 )
-from src.mcp.optimized_postgres_mcp_client import get_optimized_mcp_client, close_optimized_mcp_client
+from src.mcp.postgres_mcp_client import get_optimized_mcp_client, close_optimized_mcp_client
 
 # Configure logging
 logging.basicConfig(

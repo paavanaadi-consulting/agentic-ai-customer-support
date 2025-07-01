@@ -14,7 +14,7 @@ import os
 
 # Add parent directory to path for MCP imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from src.mcp.mcp_client import MCPClientManager
+from src.mcp.mcp_client_manager import MCPClientManager
 
 class A2AMessage:
     """A2A protocol message structure"""

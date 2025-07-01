@@ -5,7 +5,8 @@ import pytest
 import asyncio
 import json
 from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from mcp.mcp_client import MCPClient, MCPClientManager
+from src.mcp.mcp_client import MCPClient
+from src.mcp.mcp_client_manager import MCPClientManager
 
 class TestMCPClient:
     """Test suite for MCP Client"""

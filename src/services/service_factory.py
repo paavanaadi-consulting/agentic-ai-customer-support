@@ -9,7 +9,7 @@ from .ticket_service import TicketService
 from .customer_service import CustomerService
 from .feedback_service import FeedbackService
 from .analytics_service import AnalyticsService
-from ..mcp.optimized_postgres_mcp_client import OptimizedPostgreSQLMCPClient, get_optimized_mcp_client
+from ..mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient, get_optimized_mcp_client
 
 
 class ServiceFactory:

@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Any
 from ..api.schemas import (
     TicketRequest, TicketResponse, TicketStatus, Priority, QueryType
 )
-from ..mcp.optimized_postgres_mcp_client import OptimizedPostgreSQLMCPClient, MCPClientError
+from ..mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient, MCPClientError
 
 
 class TicketService:

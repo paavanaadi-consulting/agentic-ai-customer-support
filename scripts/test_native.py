@@ -60,9 +60,11 @@ class NativeMCPClient:
         
         # Try to use external postgres-mcp, fallback to our implementation
         try:
-            from mcp.postgres_mcp_wrapper import PostgresMCPWrapper
+            # from mcp.postgres_mcp_wrapper import PostgresMCPWrapper  # REMOVED
             # For local testing, use SQLite connection string format
-            self.database_server = PostgresMCPWrapper(f"sqlite:///{self.db_path}")
+            # NOTE: PostgresMCPWrapper removed
+            # self.database_server = PostgresMCPWrapper(f"sqlite:///{self.db_path}")
+            self.database_server = None  # Use OptimizedPostgreSQLMCPClient instead
         except ImportError:
             logger.warning("External postgres-mcp not available, using fallback database server")
             from mcp.database_mcp_server import DatabaseMCPServer

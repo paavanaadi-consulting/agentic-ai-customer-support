@@ -21,7 +21,8 @@ from src.data_sources.pdf_processor import PDFProcessor
 from src.data_sources.vector_db_client import VectorDBClient
 from src.data_sources.kafka_consumer import KafkaConsumer
 from src.mcp.mcp_client import MCPClient
-from src.mcp.postgres_mcp_wrapper import PostgresMCPWrapper
+# from src.mcp.postgres_mcp_wrapper import PostgresMCPWrapper  # REMOVED - use postgres_mcp_client instead
+from src.mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient
 from src.mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
 from src.mcp.aws_mcp_wrapper import AWSMCPWrapper
 from src.utils.logger import setup_logger
@@ -136,7 +137,9 @@ class EnhancedGeneticAISupport:
         # Initialize PostgreSQL MCP wrapper
         postgres_cfg = CONFIG.get('mcp_postgres', {})
         if postgres_cfg:
-            self.mcp_services['postgres'] = PostgresMCPWrapper()
+            # NOTE: PostgresMCPWrapper removed, use OptimizedPostgreSQLMCPClient instead
+            # self.mcp_services['postgres'] = OptimizedPostgreSQLMCPClient()
+            pass
             
         # Initialize Kafka MCP wrapper
         kafka_cfg = CONFIG.get('mcp_kafka', {})

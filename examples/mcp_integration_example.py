@@ -13,10 +13,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import MCP components
-from mcp.postgres_mcp_wrapper import PostgresMCPWrapper
+# from mcp.postgres_mcp_wrapper import PostgresMCPWrapper  # REMOVED - use postgres_mcp_client instead
+from src.mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient
 from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
 from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
-from mcp.mcp_client import MCPClientManager
+from src.mcp.mcp_client_manager import MCPClientManager
 
 # Import data sources
 from src.data_sources.rdbms_connector import RDBMSConnector
@@ -38,7 +39,7 @@ class CustomerSupportMCPOrchestrator:
         try:
             # Initialize Database MCP Wrapper
             db_connection_string = os.getenv("DATABASE_URL", "postgresql://admin:password@localhost:5432/customer_support")
-            self.db_server = PostgresMCPWrapper(db_connection_string)
+            self.db_server = OptimizedPostgreSQLMCPClient(connection_string=db_connection_string)
             await self.db_server.initialize()
             logger.info("Database MCP wrapper started")
             

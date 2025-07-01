@@ -4,7 +4,7 @@ Demonstrates the improved performance and features
 """
 import asyncio
 import os
-from src.mcp.optimized_postgres_mcp_client import (
+from src.mcp.postgres_mcp_client import (
     OptimizedPostgreSQLMCPClient, 
     get_optimized_mcp_client,
     close_optimized_mcp_client

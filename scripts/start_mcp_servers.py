@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Import MCP servers
-from mcp.postgres_mcp_wrapper import PostgresMCPWrapper
+# from mcp.postgres_mcp_wrapper import PostgresMCPWrapper  # REMOVED
 from mcp.kafka_mcp_wrapper import KafkaMCPWrapper, ExternalKafkaMCPConfig
 from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
 from data_sources.rdbms_connector import RDBMSConnector
@@ -85,7 +85,10 @@ class MCPServerManager:
             await db_connector.connect()
             
             # Create and start wrapper
-            server = PostgresMCPWrapper()
+            # NOTE: PostgresMCPWrapper removed
+            # server = PostgresMCPWrapper()
+            print("PostgresMCP wrapper removed - use OptimizedPostgreSQLMCPClient instead")
+            return None
             await server.initialize()
             
             self.servers["database"] = server

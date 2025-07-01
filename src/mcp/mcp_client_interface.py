@@ -1,13 +1,18 @@
 """
 MCP Client Interface
-Defines a common interface for all MCP clients to ensure consistency
+Abstract base class for MCP clients to ensure type consistency across implementations.
 """
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
 
 
 class MCPClientInterface(ABC):
-    """Abstract base class for MCP clients."""
+    """
+    Abstract base class for MCP clients.
+    
+    Defines the contract that all MCP client implementations must follow
+    to ensure type consistency and interface compliance across the system.
+    """
     
     @abstractmethod
     async def connect(self) -> bool:

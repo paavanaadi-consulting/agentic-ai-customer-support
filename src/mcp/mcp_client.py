@@ -1,17 +1,33 @@
 """
-MCP Client for connecting to MCP servers
+MCP WebSocket Client Implementation
+Provides concrete implementation for connecting to MCP servers using WebSocket protocol.
 """
 import asyncio
 import json
 import logging
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
-import websockets
 
-class MCPClient:
-    """Client for connecting to MCP servers"""
+from .mcp_client_interface import MCPClientInterface
+
+
+class MCPClient(MCPClientInterface):
+    """
+    WebSocket-based MCP client implementation.
+    
+    Provides concrete implementation for connecting to MCP servers using
+    WebSocket protocol and JSON-RPC communication. Handles tool calls,
+    resource access, and connection lifecycle management.
+    """
     
     def __init__(self, server_id: str, connection_uri: str):
+        """
+        Initialize MCP client.
+        
+        Args:
+            server_id: Unique identifier for the MCP server
+            connection_uri: WebSocket URI for connecting to the server
+        """
         self.server_id = server_id
         self.connection_uri = connection_uri
         self.websocket = None
@@ -28,8 +44,16 @@ class MCPClient:
         self.request_counter = 0
     
     async def connect(self) -> bool:
-        """Connect to the MCP server"""
+        """
+        Connect to the MCP server.
+        
+        Returns:
+            bool: True if connection successful, False otherwise
+        """
         try:
+            # Note: websockets import would be needed for actual implementation
+            # For now, this is a placeholder that would work with proper dependencies
+            import websockets
             self.websocket = await websockets.connect(self.connection_uri)
             self.running = True
             
@@ -39,12 +63,15 @@ class MCPClient:
             self.logger.info(f"Connected to MCP server: {self.server_id}")
             return True
             
+        except ImportError:
+            self.logger.error("websockets package not available. Install with: pip install websockets")
+            return False
         except Exception as e:
             self.logger.error(f"Failed to connect to MCP server {self.server_id}: {e}")
             return False
     
     async def disconnect(self):
-        """Disconnect from the MCP server"""
+        """Disconnect from the MCP server."""
         if self.websocket:
             await self.websocket.close()
             self.websocket = None
@@ -52,7 +79,7 @@ class MCPClient:
         self.logger.info(f"Disconnected from MCP server: {self.server_id}")
     
     async def _initialize_connection(self):
-        """Initialize the MCP connection"""
+        """Initialize the MCP connection with handshake and capability discovery."""
         # Send initialization message
         init_message = {
             "jsonrpc": "2.0",
@@ -78,7 +105,7 @@ class MCPClient:
         await self._list_resources()
     
     async def _list_tools(self):
-        """List available tools from the server"""
+        """Discover available tools from the server."""
         message = {
             "jsonrpc": "2.0",
             "id": self._get_request_id(),
@@ -90,7 +117,7 @@ class MCPClient:
             self.available_tools = response['result']['tools']
     
     async def _list_resources(self):
-        """List available resources from the server"""
+        """Discover available resources from the server."""
         message = {
             "jsonrpc": "2.0",
             "id": self._get_request_id(),
@@ -102,7 +129,20 @@ class MCPClient:
             self.available_resources = response['result']['resources']
     
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Call a tool on the MCP server"""
+        """
+        Call a tool on the MCP server.
+        
+        Args:
+            tool_name: Name of the tool to call
+            arguments: Tool arguments
+            
+        Returns:
+            dict: Tool execution result
+            
+        Raises:
+            RuntimeError: If client not connected
+            ValueError: If tool not available
+        """
         if not self.running:
             raise RuntimeError("Client not connected to server")
         
@@ -123,7 +163,18 @@ class MCPClient:
         return response.get('result', {})
     
     async def get_resource(self, resource_uri: str) -> Dict[str, Any]:
-        """Get a resource from the MCP server"""
+        """
+        Get a resource from the MCP server.
+        
+        Args:
+            resource_uri: URI of the resource to retrieve
+            
+        Returns:
+            dict: Resource data
+            
+        Raises:
+            RuntimeError: If client not connected
+        """
         if not self.running:
             raise RuntimeError("Client not connected to server")
         
@@ -140,7 +191,18 @@ class MCPClient:
         return response.get('result', {})
     
     async def _send_request(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        """Send a request to the MCP server and wait for response"""
+        """
+        Send a JSON-RPC request to the MCP server and wait for response.
+        
+        Args:
+            message: JSON-RPC message to send
+            
+        Returns:
+            dict: Server response
+            
+        Raises:
+            Exception: If server returns error
+        """
         request_id = message['id']
         
         # Send message
@@ -157,12 +219,17 @@ class MCPClient:
                 return response
     
     def _get_request_id(self) -> int:
-        """Get next request ID"""
+        """Generate next unique request ID."""
         self.request_counter += 1
         return self.request_counter
     
     def get_server_info(self) -> Dict[str, Any]:
-        """Get server information"""
+        """
+        Get comprehensive server information.
+        
+        Returns:
+            dict: Server info including capabilities and connection status
+        """
         return {
             'server_id': self.server_id,
             'connection_uri': self.connection_uri,
@@ -171,66 +238,49 @@ class MCPClient:
             'available_resources': self.available_resources,
             'connected': self.running
         }
-
-
-class MCPClientManager:
-    """Manager for multiple MCP clients"""
     
-    def __init__(self):
-        self.clients = {}
-        self.logger = logging.getLogger("MCP.ClientManager")
+    # Implementation of MCPClientInterface abstract methods
+    async def get_customers(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get customers from the database via MCP tool."""
+        return await self.call_tool("get_customers", {"limit": limit})
     
-    async def add_client(self, server_id: str, connection_uri: str) -> bool:
-        """Add and connect a new MCP client"""
-        if server_id in self.clients:
-            self.logger.warning(f"Client {server_id} already exists")
-            return False
-        
-        client = MCPClient(server_id, connection_uri)
-        success = await client.connect()
-        
-        if success:
-            self.clients[server_id] = client
-            self.logger.info(f"Added MCP client: {server_id}")
-            return True
-        else:
-            self.logger.error(f"Failed to add MCP client: {server_id}")
-            return False
+    async def get_customer_by_id(self, customer_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific customer by ID via MCP tool."""
+        result = await self.call_tool("get_customer_by_id", {"customer_id": customer_id})
+        return result if result else None
     
-    async def remove_client(self, server_id: str):
-        """Remove and disconnect an MCP client"""
-        if server_id in self.clients:
-            await self.clients[server_id].disconnect()
-            del self.clients[server_id]
-            self.logger.info(f"Removed MCP client: {server_id}")
+    async def create_customer(self, customer_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new customer via MCP tool."""
+        return await self.call_tool("create_customer", customer_data)
     
-    def get_client(self, server_id: str) -> Optional[MCPClient]:
-        """Get an MCP client by server ID"""
-        return self.clients.get(server_id)
+    async def update_customer(self, customer_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """Update customer information via MCP tool."""
+        return await self.call_tool("update_customer", {"customer_id": customer_id, "updates": updates})
     
-    async def call_tool(self, server_id: str, tool_name: str, arguments: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Call a tool on a specific MCP server"""
-        client = self.get_client(server_id)
-        if not client:
-            raise ValueError(f"MCP client '{server_id}' not found")
-        
-        return await client.call_tool(tool_name, arguments)
+    async def get_tickets(self, limit: int = 100, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get tickets from the database via MCP tool."""
+        params = {"limit": limit}
+        if status:
+            params["status"] = status
+        return await self.call_tool("get_tickets", params)
     
-    async def get_resource(self, server_id: str, resource_uri: str) -> Dict[str, Any]:
-        """Get a resource from a specific MCP server"""
-        client = self.get_client(server_id)
-        if not client:
-            raise ValueError(f"MCP client '{server_id}' not found")
-        
-        return await client.get_resource(resource_uri)
+    async def get_ticket_by_id(self, ticket_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific ticket by ID via MCP tool."""
+        result = await self.call_tool("get_ticket_by_id", {"ticket_id": ticket_id})
+        return result if result else None
     
-    def list_clients(self) -> List[Dict[str, Any]]:
-        """List all connected clients"""
-        return [client.get_server_info() for client in self.clients.values()]
+    async def create_ticket(self, ticket_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new ticket via MCP tool."""
+        return await self.call_tool("create_ticket", ticket_data)
     
-    async def disconnect_all(self):
-        """Disconnect all clients"""
-        for client in self.clients.values():
-            await client.disconnect()
-        self.clients.clear()
-        self.logger.info("Disconnected all MCP clients")
+    async def update_ticket(self, ticket_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """Update ticket information via MCP tool."""
+        return await self.call_tool("update_ticket", {"ticket_id": ticket_id, "updates": updates})
+    
+    async def search_knowledge_base(self, search_term: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Search the knowledge base via MCP tool."""
+        return await self.call_tool("search_knowledge_base", {"search_term": search_term, "limit": limit})
+    
+    async def get_analytics(self, days: int = 30) -> Dict[str, Any]:
+        """Get analytics data via MCP tool."""
+        return await self.call_tool("get_analytics", {"days": days})

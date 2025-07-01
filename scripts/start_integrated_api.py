@@ -14,7 +14,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.services.service_factory import initialize_service_factory_with_mcp
-from src.mcp.optimized_postgres_mcp_client import get_optimized_mcp_client
+from src.mcp.postgres_mcp_client import get_optimized_mcp_client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

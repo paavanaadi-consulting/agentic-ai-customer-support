@@ -9,7 +9,7 @@ from .ticket_service import TicketService
 from .customer_service import CustomerService
 from .feedback_service import FeedbackService
 from ..api.schemas import AnalyticsResponse
-from ..mcp.optimized_postgres_mcp_client import OptimizedPostgreSQLMCPClient, MCPClientError
+from ..mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient, MCPClientError
 
 
 class AnalyticsService:
