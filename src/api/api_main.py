@@ -3,6 +3,7 @@ API-only main application
 Lightweight FastAPI server for customer support API endpoints
 """
 
+import os
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
@@ -13,6 +14,12 @@ import time
 
 from config.env_settings import CONFIG
 from src.api.routes import router as api_router
+from src.services.service_factory import (
+    initialize_service_factory_with_optimized_mcp,
+    initialize_service_factory_with_optimized_mcp_default,
+    initialize_service_factory
+)
+from src.mcp.optimized_postgres_mcp_client import get_optimized_mcp_client, close_optimized_mcp_client
 
 # Configure logging
 logging.basicConfig(
@@ -21,16 +28,43 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Global database service
-db_service = None
+# Global service instances
+service_factory = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan management"""
+    global service_factory
     
     # Startup
     logger.info("Starting API server...")
     try:
+        # Try to initialize with optimized MCP client first
+        logger.info("Initializing optimized MCP client...")
+        try:
+            connection_string = os.getenv("DATABASE_URL")
+            mcp_server_url = os.getenv("MCP_SERVER_URL", "http://localhost:8001")
+            
+            service_factory = await initialize_service_factory_with_optimized_mcp(
+                connection_string=connection_string,
+                mcp_server_url=mcp_server_url,
+                use_direct_connection=True
+            )
+            logger.info("Service factory initialized with optimized MCP client")
+            
+        except Exception as e:
+            logger.warning(f"Optimized MCP client initialization failed: {e}")
+            logger.info("Trying optimized MCP client with default settings...")
+            
+            try:
+                service_factory = await initialize_service_factory_with_optimized_mcp_default()
+                logger.info("Service factory initialized with default optimized MCP client")
+                
+            except Exception as e2:
+                logger.warning(f"Default optimized MCP client failed: {e2}")
+                logger.info("Falling back to in-memory services...")
+                service_factory = initialize_service_factory()
+        
         logger.info("API server started successfully")
         
         yield
@@ -41,8 +75,13 @@ async def lifespan(app: FastAPI):
     finally:
         # Shutdown
         logger.info("Shutting down API server...")
-        if db_service:
-            await db_service.close()
+        
+        # Clean up optimized MCP client if it was used
+        try:
+            await close_optimized_mcp_client()
+            logger.info("Optimized MCP client closed")
+        except Exception:
+            pass
 
 # Create FastAPI application
 app = FastAPI(
@@ -92,16 +131,27 @@ async def general_exception_handler(request: Request, exc: Exception):
 async def health_check():
     """Health check endpoint for load balancers and monitoring"""
     try:
-        # Check database connection
-        if db_service:
-            await db_service.health_check()
+        # Check service factory status
+        service_status = "not_initialized"
+        if service_factory:
+            try:
+                # Test service factory by checking customer service
+                customer_service = service_factory.customer_service
+                if customer_service:
+                    service_status = "healthy"
+                else:
+                    service_status = "unhealthy"
+            except Exception as e:
+                logger.warning(f"Service health check failed: {e}")
+                service_status = "unhealthy"
         
         return {
             "status": "healthy",
             "timestamp": time.time(),
             "version": "1.0.0",
             "services": {
-                "database": "healthy" if db_service else "not_initialized"
+                "optimized_mcp_client": "available",
+                "service_factory": service_status
             }
         }
     except Exception as e:

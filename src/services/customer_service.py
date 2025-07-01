@@ -6,13 +6,16 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 
 from ..api.schemas import CustomerRequest, CustomerResponse
+from ..mcp.optimized_postgres_mcp_client import OptimizedPostgreSQLMCPClient, MCPClientError
 
 
 class CustomerService:
     """Service class for handling customer-related business logic."""
     
-    def __init__(self):
-        # In-memory storage for demo purposes (replace with database in production)
+    def __init__(self, 
+                 mcp_client: Optional[OptimizedPostgreSQLMCPClient] = None):
+        self.mcp_client = mcp_client
+        # In-memory storage for demo purposes (fallback when no client provided)
         self.customers_db = {}
     
     async def create_customer(self, request: CustomerRequest) -> CustomerResponse:
@@ -31,27 +34,65 @@ class CustomerService:
         # Validate customer data
         self._validate_customer_data(request)
         
+        # Parse name into first and last name
+        name_parts = request.name.split(' ', 1)
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
+        
         customer_data = {
             "customer_id": customer_id,
-            "name": request.name,
+            "first_name": first_name,
+            "last_name": last_name,
             "email": request.email,
             "phone": request.phone,
             "company": request.company,
             "created_at": now,
-            "metadata": request.metadata,
-            "ticket_count": 0,
-            "last_interaction": None,
-            "status": "active",
-            "tier": self._determine_customer_tier(request)
+            "tier": self._determine_customer_tier(request),
+            "status": "active"
         }
         
-        # Store customer
-        self.customers_db[customer_id] = customer_data
+        # Store customer using available client
+        if self.mcp_client:
+            try:
+                created_customer = await self.mcp_client.create_customer(customer_data)
+                if created_customer:
+                    # Trigger welcome sequence
+                    await self._trigger_welcome_sequence(customer_id)
+                    
+                    # Convert to response format
+                    response_data = {
+                        "customer_id": created_customer["customer_id"],
+                        "name": f"{created_customer['first_name']} {created_customer['last_name']}".strip(),
+                        "email": created_customer["email"],
+                        "phone": created_customer.get("phone"),
+                        "company": created_customer.get("company"),
+                        "created_at": created_customer["created_at"],
+                        "metadata": request.metadata,
+                        "ticket_count": 0,
+                        "last_interaction": None,
+                        "status": created_customer["status"],
+                        "tier": created_customer["tier"]
+                    }
+                    return CustomerResponse(**response_data)
+                else:
+                    raise Exception("Failed to create customer in database")
+            except MCPClientError as e:
+                raise Exception(f"Database error: {e}")
+        
+        # Fallback to in-memory storage
+        customer_data_memory = {
+            **customer_data,
+            "name": request.name,
+            "metadata": request.metadata,
+            "ticket_count": 0,
+            "last_interaction": None
+        }
+        self.customers_db[customer_id] = customer_data_memory
         
         # Trigger welcome sequence
         await self._trigger_welcome_sequence(customer_id)
         
-        return CustomerResponse(**customer_data)
+        return CustomerResponse(**customer_data_memory)
     
     async def get_customer_by_id(self, customer_id: str) -> Optional[CustomerResponse]:
         """
@@ -63,6 +104,30 @@ class CustomerService:
         Returns:
             CustomerResponse if found, None otherwise
         """
+        # Try MCP client first
+        if self.mcp_client:
+            try:
+                customer = await self.mcp_client.get_customer_by_id(customer_id)
+                if customer:
+                    response_data = {
+                        "customer_id": customer["customer_id"],
+                        "name": f"{customer['first_name']} {customer['last_name']}".strip(),
+                        "email": customer["email"],
+                        "phone": customer.get("phone"),
+                        "company": customer.get("company"),
+                        "created_at": customer["created_at"],
+                        "metadata": {},  # Not stored in database schema
+                        "ticket_count": 0,  # TODO: Calculate from tickets
+                        "last_interaction": customer.get("last_interaction"),
+                        "status": customer["status"],
+                        "tier": customer["tier"]
+                    }
+                    return CustomerResponse(**response_data)
+            except MCPClientError as e:
+                # Log error but continue to fallback
+                print(f"MCP client error: {e}")
+        
+        # Fallback to in-memory storage
         if customer_id not in self.customers_db:
             return None
         
@@ -120,25 +185,47 @@ class CustomerService:
         
         return CustomerResponse(**customer)
     
-    async def list_customers(self, limit: int = 10) -> List[CustomerResponse]:
+    async def list_customers(self, limit: int = 100) -> List[CustomerResponse]:
         """
-        List all customers with pagination.
+        List customers.
         
         Args:
-            limit: Maximum number of results to return
+            limit: Maximum number of customers to return
             
         Returns:
             List of CustomerResponse objects
         """
-        customers = list(self.customers_db.values())
+        customers = []
         
-        # Sort by creation date (newest first)
-        customers.sort(key=lambda x: x["created_at"], reverse=True)
+        # Try MCP client first
+        if self.mcp_client:
+            try:
+                customer_data = await self.mcp_client.get_customers(limit=limit)
+                for customer in customer_data:
+                    response_data = {
+                        "customer_id": customer["customer_id"],
+                        "name": f"{customer['first_name']} {customer['last_name']}".strip(),
+                        "email": customer["email"],
+                        "phone": customer.get("phone"),
+                        "company": customer.get("company"),
+                        "created_at": customer["created_at"],
+                        "metadata": {},  # Not stored in database schema
+                        "ticket_count": 0,  # TODO: Calculate from tickets
+                        "last_interaction": customer.get("last_interaction"),
+                        "status": customer["status"],
+                        "tier": customer["tier"]
+                    }
+                    customers.append(CustomerResponse(**response_data))
+                return customers
+            except MCPClientError as e:
+                # Log error but continue to fallback
+                print(f"MCP client error: {e}")
         
-        # Apply limit
-        customers = customers[:limit]
+        # Fallback to in-memory storage
+        for customer_data in list(self.customers_db.values())[:limit]:
+            customers.append(CustomerResponse(**customer_data))
         
-        return [CustomerResponse(**customer) for customer in customers]
+        return customers
     
     async def update_last_interaction(self, customer_id: str) -> None:
         """
@@ -147,6 +234,19 @@ class CustomerService:
         Args:
             customer_id: The unique customer identifier
         """
+        # Use MCP client if available
+        if self.mcp_client:
+            try:
+                await self.mcp_client.update_customer(customer_id, {
+                    "last_interaction": datetime.utcnow()
+                })
+                return
+            except MCPClientError as e:
+                # Log error and fall back to in-memory
+                print(f"MCP error in update_last_interaction: {e}")
+                pass
+        
+        # Fallback to in-memory storage
         if customer_id in self.customers_db:
             self.customers_db[customer_id]["last_interaction"] = datetime.utcnow()
     
@@ -157,6 +257,24 @@ class CustomerService:
         Args:
             customer_id: The unique customer identifier
         """
+        # Use MCP client if available
+        if self.mcp_client:
+            try:
+                # Get current customer data
+                customer = await self.mcp_client.get_customer_by_id(customer_id)
+                if customer:
+                    current_count = customer.get("total_tickets", 0)
+                    await self.mcp_client.update_customer(customer_id, {
+                        "total_tickets": current_count + 1
+                    })
+                    await self._check_tier_upgrade(customer_id)
+                return
+            except MCPClientError as e:
+                # Log error and fall back to in-memory
+                print(f"MCP error in increment_ticket_count: {e}")
+                pass
+        
+        # Fallback to in-memory storage
         if customer_id in self.customers_db:
             self.customers_db[customer_id]["ticket_count"] += 1
             await self._check_tier_upgrade(customer_id)

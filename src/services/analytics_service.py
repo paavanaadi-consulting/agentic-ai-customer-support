@@ -2,13 +2,14 @@
 Analytics service for handling system analytics and metrics.
 """
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from .query_service import QueryService
 from .ticket_service import TicketService
 from .customer_service import CustomerService
 from .feedback_service import FeedbackService
 from ..api.schemas import AnalyticsResponse
+from ..mcp.optimized_postgres_mcp_client import OptimizedPostgreSQLMCPClient, MCPClientError
 
 
 class AnalyticsService:
@@ -17,14 +18,16 @@ class AnalyticsService:
     def __init__(
         self,
         query_service: QueryService,
-        ticket_service: TicketService,
-        customer_service: CustomerService,
-        feedback_service: FeedbackService
+        ticket_service: Optional[TicketService] = None,
+        customer_service: Optional[CustomerService] = None,
+        feedback_service: Optional[FeedbackService] = None,
+        mcp_client: Optional[OptimizedPostgreSQLMCPClient] = None
     ):
         self.query_service = query_service
         self.ticket_service = ticket_service
         self.customer_service = customer_service
         self.feedback_service = feedback_service
+        self.mcp_client = mcp_client
     
     async def get_system_analytics(self) -> AnalyticsResponse:
         """
@@ -33,18 +36,50 @@ class AnalyticsService:
         Returns:
             AnalyticsResponse with system metrics
         """
+        # Use MCP client for analytics if available
+        if self.mcp_client:
+            try:
+                analytics = await self.mcp_client.get_analytics()
+                
+                # Build response from MCP data
+                return AnalyticsResponse(
+                    total_queries=0,  # Not available from MCP directly
+                    total_tickets=analytics.get("total_tickets", 0),
+                    total_customers=analytics.get("total_customers", 0),
+                    total_feedback=0,  # Not available from MCP directly
+                    avg_response_time=analytics.get("avg_resolution_hours", 0.0),
+                    avg_rating=analytics.get("avg_satisfaction", 0.0),
+                    tickets_by_status={
+                        "open": analytics.get("open_tickets", 0),
+                        "resolved": analytics.get("resolved_tickets", 0),
+                        "high_priority": analytics.get("high_priority", 0)
+                    },
+                    queries_by_type={},  # Not available from MCP directly
+                    customers_by_tier={},  # Not available from MCP directly
+                    peak_hours={},  # Not available from MCP directly
+                    satisfaction_trend=[],  # Not available from MCP directly
+                    resolution_time_avg=analytics.get("avg_resolution_hours", 0.0),
+                    generated_at=datetime.utcnow()
+                )
+                
+            except MCPClientError as e:
+                # Log error and fall back to service aggregation
+                print(f"MCP error in get_system_analytics: {e}")
+                pass
+        
+        # Fallback to aggregating from individual services
         # Get basic counts
         total_queries = self.query_service.get_query_count()
-        total_tickets = self.ticket_service.get_ticket_count()
-        total_customers = self.customer_service.get_customer_count()
-        total_feedback = self.feedback_service.get_feedback_count()
+        total_tickets = self.ticket_service.get_ticket_count() if self.ticket_service else 0
+        total_customers = self.customer_service.get_customer_count() if self.customer_service else 0
+        total_feedback = self.feedback_service.get_feedback_count() if self.feedback_service else 0
         
         # Get performance metrics
         avg_response_time = self.query_service.get_average_processing_time()
-        avg_rating = self.feedback_service.get_average_rating()
+        avg_rating = self.feedback_service.get_average_rating() if self.feedback_service else 0.0
         
         # Get distribution data
-        tickets_by_status = self.ticket_service.get_tickets_by_status()
+        tickets_by_status = self.ticket_service.get_tickets_by_status() if self.ticket_service else {}
         queries_by_type = self.query_service.get_queries_by_type()
         
         # Calculate additional metrics

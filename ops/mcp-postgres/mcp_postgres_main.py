@@ -35,7 +35,11 @@ class SimpleMCPPostgresServer:
         self.tools = [
             'query_database',
             'get_customers',
+            'create_customer',
+            'update_customer',
             'get_tickets',
+            'create_ticket',
+            'update_ticket',
             'get_ticket_details',
             'search_knowledge_base',
             'get_analytics'
@@ -231,7 +235,8 @@ class SimpleMCPPostgresServer:
                     COUNT(*) FILTER (WHERE priority = 'high') as high_priority,
                     AVG(satisfaction_score) as avg_satisfaction,
                     AVG(EXTRACT(epoch FROM (resolved_at - created_at))/3600) 
-                        FILTER (WHERE resolved_at IS NOT NULL) as avg_resolution_hours
+                        FILTER (WHERE resolved_at IS NOT NULL) as avg_resolution_hours,
+                    (SELECT COUNT(*) FROM customers) as total_customers
                 FROM support_tickets
                 WHERE created_at >= NOW() - INTERVAL '%s days'
                 """ % days
@@ -243,6 +248,154 @@ class SimpleMCPPostgresServer:
                     'analytics': results[0] if results else {},
                     'period_days': days
                 }
+                
+            elif tool_name == 'create_customer':
+                # Extract customer data from arguments
+                customer_data = arguments.get('customer_data', {})
+                
+                if not customer_data:
+                    return {'error': 'customer_data parameter is required'}
+                
+                # Insert customer into database
+                query = """
+                INSERT INTO customers (customer_id, first_name, last_name, email, phone, company, tier, status, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING *
+                """
+                
+                params = [
+                    customer_data.get('customer_id'),
+                    customer_data.get('first_name'),
+                    customer_data.get('last_name'),
+                    customer_data.get('email'),
+                    customer_data.get('phone'),
+                    customer_data.get('company'),
+                    customer_data.get('tier', 'standard'),
+                    customer_data.get('status', 'active'),
+                    customer_data.get('created_at')
+                ]
+                
+                results = await self.execute_query(query, params)
+                
+                if results:
+                    return {
+                        'success': True,
+                        'customer': results[0]
+                    }
+                else:
+                    return {'error': 'Failed to create customer'}
+                    
+            elif tool_name == 'update_customer':
+                customer_id = arguments.get('customer_id')
+                updates = arguments.get('updates', {})
+                
+                if not customer_id or not updates:
+                    return {'error': 'customer_id and updates parameters are required'}
+                
+                # Build dynamic update query
+                set_clauses = []
+                params = []
+                param_index = 1
+                
+                for field, value in updates.items():
+                    if field != 'customer_id':  # Don't allow updating the primary key
+                        set_clauses.append(f"{field} = ${param_index}")
+                        params.append(value)
+                        param_index += 1
+                
+                if not set_clauses:
+                    return {'error': 'No valid fields to update'}
+                
+                query = f"""
+                UPDATE customers 
+                SET {', '.join(set_clauses)}
+                WHERE customer_id = ${param_index}
+                RETURNING *
+                """
+                params.append(customer_id)
+                
+                results = await self.execute_query(query, params)
+                
+                if results:
+                    return {
+                        'success': True,
+                        'customer': results[0]
+                    }
+                else:
+                    return {'error': 'Customer not found or update failed'}
+                    
+            elif tool_name == 'create_ticket':
+                # Extract ticket data from arguments
+                ticket_data = arguments.get('ticket_data', {})
+                
+                if not ticket_data:
+                    return {'error': 'ticket_data parameter is required'}
+                
+                # Insert ticket into database
+                query = """
+                INSERT INTO support_tickets (ticket_id, customer_id, subject, description, priority, status, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING *
+                """
+                
+                params = [
+                    ticket_data.get('ticket_id'),
+                    ticket_data.get('customer_id'),
+                    ticket_data.get('subject'),
+                    ticket_data.get('description'),
+                    ticket_data.get('priority', 'medium'),
+                    ticket_data.get('status', 'open'),
+                    ticket_data.get('created_at')
+                ]
+                
+                results = await self.execute_query(query, params)
+                
+                if results:
+                    return {
+                        'success': True,
+                        'ticket': results[0]
+                    }
+                else:
+                    return {'error': 'Failed to create ticket'}
+                    
+            elif tool_name == 'update_ticket':
+                ticket_id = arguments.get('ticket_id')
+                updates = arguments.get('updates', {})
+                
+                if not ticket_id or not updates:
+                    return {'error': 'ticket_id and updates parameters are required'}
+                
+                # Build dynamic update query
+                set_clauses = []
+                params = []
+                param_index = 1
+                
+                for field, value in updates.items():
+                    if field != 'ticket_id':  # Don't allow updating the primary key
+                        set_clauses.append(f"{field} = ${param_index}")
+                        params.append(value)
+                        param_index += 1
+                
+                if not set_clauses:
+                    return {'error': 'No valid fields to update'}
+                
+                query = f"""
+                UPDATE support_tickets 
+                SET {', '.join(set_clauses)}
+                WHERE ticket_id = ${param_index}
+                RETURNING *
+                """
+                params.append(ticket_id)
+                
+                results = await self.execute_query(query, params)
+                
+                if results:
+                    return {
+                        'success': True,
+                        'ticket': results[0]
+                    }
+                else:
+                    return {'error': 'Ticket not found or update failed'}
                 
             else:
                 return {'error': f'Unknown tool: {tool_name}'}

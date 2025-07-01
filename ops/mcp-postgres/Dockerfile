@@ -14,9 +14,6 @@ RUN apt-get update && apt-get install -y \
 COPY ops/mcp-postgres/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the MCP server code
-COPY mcp/ ./mcp/
-
 # Copy the main application file
 COPY ops/mcp-postgres/mcp_postgres_main.py .
 

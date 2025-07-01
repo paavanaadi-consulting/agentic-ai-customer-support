@@ -17,6 +17,16 @@ from ..services.feedback_service import FeedbackService
 from ..services.analytics_service import AnalyticsService
 
 
+# Export list for better IDE support
+__all__ = [
+    "get_query_service_dep",
+    "get_ticket_service_dep", 
+    "get_customer_service_dep",
+    "get_feedback_service_dep",
+    "get_analytics_service_dep"
+]
+
+
 # Dependency providers - using service factory for singleton behavior
 def get_query_service_dep() -> QueryService:
     """Dependency provider for the QueryService."""
