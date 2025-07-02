@@ -28,6 +28,12 @@ spec:
         - protocol: TCP
           port: 8002  # MCP Kafka
         - protocol: TCP
+          port: 8766  # MCP AWS Lambda
+        - protocol: TCP
+          port: 8767  # MCP AWS Messaging
+        - protocol: TCP
+          port: 8768  # MCP AWS MQ
+        - protocol: TCP
           port: 8003  # Consumer
         - protocol: TCP
           port: 5432  # Postgres

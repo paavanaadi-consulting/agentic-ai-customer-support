@@ -62,6 +62,15 @@ class Settings(BaseSettings):
     AZURE_STORAGE_KEY: str = "myazurekey"
     AZURE_STORAGE_CONTAINER: str = "mycontainer"
     AZURE_STORAGE_CONNECTION_STRING: str = "DefaultEndpointsProtocol=https;AccountName=myazureaccount;AccountKey=myazurekey;EndpointSuffix=core.windows.net"
+    
+    # AWS MCP Configuration
+    AWS_MCP_LAMBDA_PORT: int = 8766
+    AWS_MCP_MESSAGING_PORT: int = 8767
+    AWS_MCP_MQ_PORT: int = 8768
+    AWS_MCP_LAMBDA_URL: str = "http://localhost:8766"
+    AWS_MCP_MESSAGING_URL: str = "http://localhost:8767"
+    AWS_MCP_MQ_URL: str = "http://localhost:8768"
+    AWS_MCP_USE_EXTERNAL_SERVERS: bool = True
 
     # Environment
     ENV: str = os.getenv("ENV", "development")

@@ -68,7 +68,7 @@ Maintained for backward compatibility:
 
 ## 📝 Notes
 
-- All scripts are designed to be run from the `cicd/scripts/` directory
+- All scripts are designed to be run from the `ops/scripts/` directory
 - Scripts automatically navigate to the correct working directory
 - Most scripts include colored output and progress indicators
 - Health checks verify both service status and endpoint availability

@@ -46,4 +46,29 @@ CONFIG = {
         "region_name": env_settings.AWS_S3_REGION,
         # Add more AWS config as needed
     },
+    "mcp_aws_external": {
+        "access_key": getattr(env_settings, "AWS_ACCESS_KEY_ID", None),
+        "secret_key": getattr(env_settings, "AWS_SECRET_ACCESS_KEY", None),
+        "region": env_settings.AWS_S3_REGION,
+        "use_external_servers": True,
+        "service_types": ["lambda", "sns", "sqs", "mq"],
+        "timeout": 30,
+        "max_retries": 3,
+        # Lambda configuration
+        "lambda": {
+            "default_function": getattr(env_settings, "AWS_DEFAULT_LAMBDA", None)
+        },
+        # SNS configuration
+        "sns": {
+            "default_topic": getattr(env_settings, "AWS_DEFAULT_SNS_TOPIC", None)
+        },
+        # SQS configuration
+        "sqs": {
+            "default_queue": getattr(env_settings, "AWS_DEFAULT_SQS_QUEUE", None)
+        },
+        # MQ configuration
+        "mq": {
+            "default_broker": getattr(env_settings, "AWS_DEFAULT_MQ_BROKER", None)
+        }
+    },
 }

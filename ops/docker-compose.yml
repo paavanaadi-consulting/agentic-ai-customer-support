@@ -1,11 +1,39 @@
 version: '3.8'
 
 services:
-  # Main Application Service
-  main-app:
+  # AWS MCP Server Service
+  mcp-aws:
+    build:
+      context: ./mcp-aws
+      dockerfile: Dockerfile
+    ports:
+      - "8766:8766"  # Lambda Tool MCP Server
+      - "8767:8767"  # Messaging MCP Server
+      - "8768:8768"  # MQ MCP Server
+    environment:
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_MCP_LAMBDA_PORT=8766
+      - AWS_MCP_MESSAGING_PORT=8767
+      - AWS_MCP_MQ_PORT=8768
+    volumes:
+      - ./mcp-aws/config:/app/config
+    healthcheck:
+      test: ["CMD", "/app/health_check.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - agentic_network
+
+  # API Service
+  api-service:
     build:
       context: ..
-      dockerfile: ops/main-app/Dockerfile
+      dockerfile: ops/api/Dockerfile.api
     ports:
       - "8000:8000"
     environment:
@@ -14,330 +42,174 @@ services:
       - DB_NAME=customer_support
       - DB_USER=admin
       - DB_PASSWORD=password
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - VECTOR_DB_HOST=qdrant
-      - VECTOR_DB_PORT=6333
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - MCP_DATABASE_HOST=mcp-postgres
-      - MCP_DATABASE_PORT=8001
-      - MCP_KAFKA_HOST=mcp-kafka-wrapper
-      - MCP_KAFKA_PORT=8003
-      - MCP_AWS_HOST=mcp-aws
-      - MCP_AWS_PORT=8004
-      - AGENTS_SERVICE_HOST=agents-service
-      - AGENTS_SERVICE_PORT=8005
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      qdrant:
-        condition: service_started
-      redis:
-        condition: service_started
-      agents-service:
-        condition: service_started
-      mcp-postgres:
-        condition: service_started
-      mcp-kafka-wrapper:
-        condition: service_started
-      mcp-aws:
-        condition: service_started
-    volumes:
-      - ../data:/app/data
-      - ../logs:/app/logs
-      - ../config:/app/config
-    env_file:
-      - ../.env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-
-  # API Service (Lightweight FastAPI service)
-  api-service:
-    build:
-      context: ..
-      dockerfile: ops/api/Dockerfile.api
-    ports:
-      - "8080:8000"
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=customer_support
-      - DB_USER=admin
-      - DB_PASSWORD=password
+      - MCP_POSTGRES_URL=http://mcp-postgres:8001
+      - MCP_KAFKA_URL=http://mcp-kafka:8002
+      - MCP_AWS_LAMBDA_URL=http://mcp-aws:8766
+      - MCP_AWS_MESSAGING_URL=http://mcp-aws:8767
+      - MCP_AWS_MQ_URL=http://mcp-aws:8768
       - LOG_LEVEL=INFO
     depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ../logs:/app/logs
-    env_file:
-      - ../.env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-
-  # Agents Service (AI Agents microservice)
-  agents-service:
-    build:
-      context: ..
-      dockerfile: ops/agents/Dockerfile
-    ports:
-      - "8005:8005"
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=customer_support
-      - DB_USER=admin
-      - DB_PASSWORD=password
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - VECTOR_DB_HOST=qdrant
-      - VECTOR_DB_PORT=6333
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - AGENTS_SERVICE_PORT=8005
-      - LOG_LEVEL=INFO
-    depends_on:
-      postgres:
-        condition: service_healthy
-      qdrant:
-        condition: service_started
-      redis:
-        condition: service_started
-      kafka:
-        condition: service_started
-    volumes:
-      - ../logs:/app/logs
-      - ../config:/app/config
-    env_file:
-      - ../.env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-
-  # MCP Postgres Server (Simplified)
-  mcp-postgres:
-    build:
-      context: ..
-      dockerfile: ops/mcp-postgres/Dockerfile
-    ports:
-      - "8001:8001"
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=customer_support
-      - DB_USER=admin
-      - DB_PASSWORD=password
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ../logs:/app/logs
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-
-  # MCP Kafka Server (Confluent)
-  mcp-kafka:
-    image: node:18-alpine
-    ports:
-      - "8002:8002"
-    environment:
-      - MCP_SERVER_PORT=8002
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - KAFKA_TOPIC_NAME=customer-support
-      - KAFKA_GROUP_ID=ai-support-group
-      - KAFKA_AUTO_OFFSET_RESET=earliest
-    depends_on:
-      - kafka
-    volumes:
-      - ../logs:/app/logs
-    working_dir: /app
-    command: >
-      sh -c "
-        npm install -g @confluentinc/mcp-confluent &&
-        npx @confluentinc/mcp-confluent --transport stdio
-      "
-    restart: unless-stopped
-
-  # MCP Kafka Wrapper (Python interface to Confluent MCP)
-  mcp-kafka-wrapper:
-    build:
-      context: ..
-      dockerfile: ops/mcp-kafka/Dockerfile.mcp
-    ports:
-      - "8003:8003"
-    environment:
-      - MCP_SERVER_TYPE=kafka-wrapper
-      - MCP_SERVER_PORT=8003
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - EXTERNAL_KAFKA_MCP_HOST=mcp-kafka
-      - EXTERNAL_KAFKA_MCP_PORT=8002
-    depends_on:
-      - kafka
+      - postgres
+      - mcp-postgres
       - mcp-kafka
+      - mcp-aws
     volumes:
       - ../logs:/app/logs
-    env_file:
-      - ../.env
-    command: ["python", "-c", "from mcp_servers.kafka_mcp import KafkaMCPWrapper, ExternalKafkaMCPConfig; import asyncio; config = ExternalKafkaMCPConfig(bootstrap_servers='kafka:9092'); asyncio.run(KafkaMCPWrapper(config).start_as_server())"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
+    networks:
+      - agentic_network
 
-  # MCP AWS Server
-  mcp-aws:
-    build:
-      context: ..
-      dockerfile: ops/mcp-kafka/Dockerfile.mcp
-    ports:
-      - "8004:8004"
-    environment:
-      - MCP_SERVER_TYPE=aws
-      - MCP_SERVER_PORT=8004
-    volumes:
-      - ../logs:/app/logs
-    env_file:
-      - ../.env
-    command: ["python", "-c", "from mcp_servers.aws_mcp import AWSMCPWrapper; import asyncio; asyncio.run(AWSMCPWrapper().start_as_server())"]
-    restart: unless-stopped
-
-  # PostgreSQL Database
+  # Database Service
   postgres:
     build:
-      context: ..
-      dockerfile: ops/postgres/Dockerfile
-    environment:
-      POSTGRES_DB: customer_support
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
+      context: ./postgres
+      dockerfile: Dockerfile
     ports:
       - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=customer_support
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./postgres/init-scripts:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d customer_support"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - agentic_network
 
-  # Optimized Kafka service using custom Alpine-based image
-  kafka:
-    build:
-      context: ./mcp-kafka/kafka-alpine
-      dockerfile: Dockerfile
-    ports:
-      - "9092:9092"
-    environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CREATE_TOPICS=customer-queries:1:1,agent-events:1:1
-      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
-      - KAFKA_LOG_RETENTION_HOURS=24
-      - KAFKA_LOG_SEGMENT_BYTES=1048576
-      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
-      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
-      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
-    depends_on:
-      - zookeeper
-    volumes:
-      - kafka_data:/opt/kafka/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  zookeeper:
-    image: bitnami/zookeeper:3.8
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    restart: unless-stopped
-
+  # Vector Database (Qdrant)
   qdrant:
     image: qdrant/qdrant:latest
     ports:
       - "6333:6333"
+      - "6334:6334"
     volumes:
-      - ../qdrant_data:/qdrant/storage
-    restart: unless-stopped
-
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-    volumes:
-      - redisdata:/data
-    restart: unless-stopped
-
-  # Kafka topic initialization (runs once)
-  kafka-init:
-    build:
-      context: ./mcp-kafka/kafka-alpine
-      dockerfile: Dockerfile
-    depends_on:
-      kafka:
-        condition: service_healthy
-    entrypoint: ["/bin/bash", "-c"]
-    command: >
-      "
-      echo 'Waiting for Kafka to be ready...' &&
-      sleep 15 &&
-      /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic customer-queries &&
-      /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic agent-events &&
-      echo 'Topics created successfully'
-      "
-    restart: "no"
-
-  # GeneticML Evolution Service
-  geneticml-service:
-    build:
-      context: ..
-      dockerfile: ops/geneticml/Dockerfile.geneticml
-    ports:
-      - "8006:8006"
-    environment:
-      - POPULATION_SIZE=50
-      - MUTATION_RATE=0.1
-      - CROSSOVER_RATE=0.8
-      - MAX_GENERATIONS=100
-      - ELITE_SIZE=5
-      - FITNESS_THRESHOLD=0.9
-    volumes:
-      - ../evolution_results:/app/evolution_results
-      - ../logs:/app/logs
-    networks:
-      - customer_support_network
+      - qdrant_data:/qdrant/storage
     healthcheck:
-      test: ["CMD", "python", "-c", "import geneticML; print('OK')"]
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+    restart: unless-stopped
+    networks:
+      - agentic_network
+
+  # Kafka Service
+  kafka:
+    image: bitnami/kafka:latest
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - agentic_network
+
+  # Zookeeper (for Kafka)
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    volumes:
+      - zookeeper_data:/bitnami/zookeeper
+    restart: unless-stopped
+    networks:
+      - agentic_network
+
+  # Postgres MCP Server
+  mcp-postgres:
+    build:
+      context: ./mcp-postgres
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=admin
+      - DB_PASSWORD=password
+      - DB_NAME=customer_support
+      - MCP_PORT=8001
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - agentic_network
+
+  # Kafka MCP Server
+  mcp-kafka:
+    build:
+      context: ./mcp-kafka
+      dockerfile: Dockerfile.mcp
+    ports:
+      - "8002:8002"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - MCP_PORT=8002
+    depends_on:
+      - kafka
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - agentic_network
+
+  # Consumer Service
+  consumer-service:
+    build:
+      context: ..
+      dockerfile: ops/agents/Dockerfile
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=admin
+      - DB_PASSWORD=password
+      - DB_NAME=customer_support
+      - VECTOR_DB_HOST=qdrant
+      - VECTOR_DB_PORT=6333
+      - LOG_LEVEL=INFO
+    depends_on:
+      - postgres
+      - kafka
+      - qdrant
+    restart: unless-stopped
+    networks:
+      - agentic_network
+
+networks:
+  agentic_network:
+    driver: bridge
 
 volumes:
   pgdata:
-  redisdata:
-  kafka_data:
-
-networks:
-  customer_support_network:
-    driver: bridge
+  qdrant_data:
+  zookeeper_data:

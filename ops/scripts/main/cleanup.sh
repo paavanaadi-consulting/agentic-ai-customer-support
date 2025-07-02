@@ -6,7 +6,7 @@ set -e  # Exit on any error
 echo "🧹 Cleaning up Agentic AI Customer Support System..."
 
 # Stop and remove all containers, networks, and volumes
-docker-compose -f cicd/docker-compose.yml down -v --remove-orphans
+docker-compose -f ops/docker-compose.yml down -v --remove-orphans
 
 # Remove unused Docker resources
 echo "🗑️  Removing unused Docker resources..."
@@ -23,4 +23,4 @@ rm -rf ./qdrant_data 2>/dev/null || true
 rm -rf ./logs/*.log 2>/dev/null || true
 
 echo "✅ Cleanup completed successfully!"
-echo "🚀 To start fresh, run: ./cicd/build.sh && ./cicd/start.sh"
+echo "🚀 To start fresh, run: ./ops/build.sh && ./ops/start.sh"

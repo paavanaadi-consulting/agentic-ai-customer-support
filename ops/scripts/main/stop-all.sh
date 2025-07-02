@@ -25,7 +25,12 @@ echo "🧠 Stopping Agents Service..."
 docker-compose stop agents-service
 
 echo "🤖 Stopping MCP Services..."
-docker-compose stop mcp-database mcp-kafka mcp-kafka-wrapper mcp-aws mcp-kafka
+# Stop Database and Kafka MCP services
+docker-compose stop mcp-postgres mcp-kafka
+
+# Stop AWS MCP services using dedicated script
+echo "☁️ Stopping AWS MCP services..."
+./main/aws-mcp.sh stop
 
 echo "🏗️ Stopping Infrastructure Services..."
 docker-compose stop kafka zookeeper qdrant redis postgres

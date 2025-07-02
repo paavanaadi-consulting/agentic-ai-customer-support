@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-aws
+  labels:
+    app: mcp-aws
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8766
+    targetPort: 8766
+    protocol: TCP
+    name: lambda
+  - port: 8767
+    targetPort: 8767
+    protocol: TCP
+    name: messaging
+  - port: 8768
+    targetPort: 8768
+    protocol: TCP
+    name: mq
+  selector:
+    app: mcp-aws

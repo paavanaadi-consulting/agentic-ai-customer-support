@@ -34,4 +34,4 @@ docker images | grep -E "(agentic|customer|support)" | head -10
 
 echo ""
 echo "🚀 To start services, run: ./scripts/start.sh"
-echo "📖 For more info, check: cicd/README-Infrastructure.md"
+echo "📖 For more info, check: ops/README-Infrastructure.md"

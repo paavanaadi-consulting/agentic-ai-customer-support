@@ -25,6 +25,8 @@ from src.mcp.mcp_client import MCPClient
 from src.mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient
 from src.mcp.kafka_mcp_client import OptimizedKafkaMCPClient
 from src.mcp.aws_mcp_wrapper import AWSMCPWrapper
+from src.mcp.aws_mcp_client import OptimizedAWSMCPClient
+from src.mcp.mcp_client_manager import MCPClientManager
 from src.utils.logger import setup_logger
 from src.api.api_main import app as create_app
 
@@ -63,6 +65,9 @@ class EnhancedGeneticAISupport:
             
             # Initialize MCP clients for connectors
             await self._initialize_mcp_services()
+            
+            # Initialize external AWS MCP servers
+            await self._initialize_external_aws_mcp_services()
             
             self.initialized = True
             self.logger.info("Enhanced system initialization complete!")
@@ -166,6 +171,18 @@ class EnhancedGeneticAISupport:
             )
             self.mcp_services['aws'] = AWSMCPWrapper(aws_config)
             
+        # Initialize Optimized AWS MCP Client
+        optimized_aws_cfg = CONFIG.get('mcp_aws_optimized', {})
+        if optimized_aws_cfg:
+            self.mcp_services['aws_optimized'] = OptimizedAWSMCPClient(
+                aws_profile=optimized_aws_cfg.get('profile', 'default'),
+                aws_region=optimized_aws_cfg.get('region', 'us-east-1'),
+                service_name=optimized_aws_cfg.get('service_name', 'execute-api'),
+                endpoint_url=optimized_aws_cfg.get('endpoint_url'),
+                access_key=optimized_aws_cfg.get('access_key'),
+                secret_key=optimized_aws_cfg.get('secret_key')
+            )
+        
         # Initialize all MCP services
         for name, service in self.mcp_services.items():
             try:
@@ -180,6 +197,50 @@ class EnhancedGeneticAISupport:
                 self.logger.error(f"Failed to initialize MCP service {name}: {e}")
                 
         self.logger.info(f"Initialized MCP services: {list(self.mcp_services.keys())}")
+    
+    async def _initialize_external_aws_mcp_services(self):
+        """Initialize external AWS MCP servers for enhanced integration"""
+        # Create MCP client manager for centralized management
+        self.mcp_client_manager = MCPClientManager()
+        
+        # Get external AWS MCP configuration
+        external_aws_cfg = CONFIG.get('mcp_aws_external', {})
+        if not external_aws_cfg:
+            self.logger.info("No external AWS MCP configuration found, skipping initialization")
+            return
+            
+        # Configure which services to use
+        service_types = external_aws_cfg.get('service_types', ["lambda", "sns", "sqs", "mq"])
+        use_external_servers = external_aws_cfg.get('use_external_servers', True)
+        
+        # Add AWS client with external MCP servers
+        try:
+            self.logger.info("Initializing external AWS MCP servers...")
+            success = await self.mcp_client_manager.add_aws_client(
+                server_id="aws-external",
+                aws_access_key_id=external_aws_cfg.get('access_key'),
+                aws_secret_access_key=external_aws_cfg.get('secret_key'),
+                region_name=external_aws_cfg.get('region', 'us-east-1'),
+                use_external_mcp_servers=use_external_servers,
+                service_types=service_types,
+                timeout=external_aws_cfg.get('timeout', 30),
+                max_retries=external_aws_cfg.get('max_retries', 3)
+            )
+            
+            if success:
+                # Store the client in mcp_services for compatibility with existing code
+                self.mcp_services['aws_external'] = self.mcp_client_manager.get_client("aws-external")
+                self.logger.info("External AWS MCP servers initialized successfully")
+                
+                # Log which external servers were initialized
+                external_servers = getattr(self.mcp_services['aws_external'], "external_servers", {})
+                if external_servers:
+                    self.logger.info(f"Connected to external AWS MCP servers: {list(external_servers.keys())}")
+            else:
+                self.logger.error("Failed to initialize external AWS MCP servers")
+        
+        except Exception as e:
+            self.logger.error(f"Error initializing external AWS MCP servers: {str(e)}")
     
     async def process_query(self, query_data: Dict[str, Any]) -> Dict[str, Any]:
         """Enhanced query processing with full database integration"""

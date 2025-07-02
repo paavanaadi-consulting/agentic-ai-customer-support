@@ -26,7 +26,12 @@ echo "⏳ Waiting for Kafka topics to be created..."
 sleep 10
 
 echo "🤖 Starting MCP services..."
-docker-compose up -d mcp-database mcp-kafka mcp-kafka-wrapper mcp-aws
+# Start Database and Kafka MCP services
+docker-compose up -d mcp-postgres mcp-kafka
+
+# Start AWS MCP services explicitly
+echo "☁️ Starting AWS MCP services..."
+./main/aws-mcp.sh start
 
 echo "⏳ Waiting for MCP services to be ready..."
 sleep 10

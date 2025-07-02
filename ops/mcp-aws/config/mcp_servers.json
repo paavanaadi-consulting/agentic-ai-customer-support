@@ -1,0 +1,23 @@
+{
+  "lambda": {
+    "enabled": true,
+    "port": 8766,
+    "log_level": "INFO",
+    "timeout": 60,
+    "max_connections": 100
+  },
+  "messaging": {
+    "enabled": true,
+    "port": 8767,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "mq": {
+    "enabled": true,
+    "port": 8768,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  }
+}

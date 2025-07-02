@@ -16,6 +16,12 @@ data:
   # MCP Server URLs
   MCP_POSTGRES_URL: "http://mcp-postgres-service:8001"
   MCP_KAFKA_URL: "http://mcp-kafka-service:8002"
+  MCP_AWS_LAMBDA_URL: "http://mcp-aws:8766"
+  MCP_AWS_MESSAGING_URL: "http://mcp-aws:8767"
+  MCP_AWS_MQ_URL: "http://mcp-aws:8768"
+  
+  # AWS Configuration
+  AWS_REGION: "us-east-1"
   
   # Kafka Configuration
   KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"

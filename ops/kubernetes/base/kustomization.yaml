@@ -17,6 +17,10 @@ resources:
   - mcp-postgres-service.yaml
   - mcp-kafka-deployment.yaml
   - mcp-kafka-service.yaml
+  - mcp-aws-deployment.yaml
+  - mcp-aws-service.yaml
+  - mcp-aws-configmap.yaml
+  - mcp-aws-hpa.yaml
   - consumer-deployment.yaml
   - ingress.yaml
   - hpa.yaml
@@ -33,6 +37,8 @@ images:
   - name: agentic-ai-mcp-postgres
     newTag: latest
   - name: agentic-ai-mcp-kafka
+    newTag: latest
+  - name: agentic-ai-mcp-aws
     newTag: latest
   - name: agentic-ai-consumer
     newTag: latest

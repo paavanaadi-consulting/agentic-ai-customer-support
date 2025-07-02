@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-aws
+  labels:
+    app: mcp-aws
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-aws
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: mcp-aws
+    spec:
+      containers:
+      - name: mcp-aws
+        image: agentic-ai-mcp-aws:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8766
+          name: lambda
+        - containerPort: 8767
+          name: messaging
+        - containerPort: 8768
+          name: mq
+        env:
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: AWS_REGION
+              optional: false
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: AWS_ACCESS_KEY_ID
+              optional: false
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: AWS_SECRET_ACCESS_KEY
+              optional: false
+        - name: AWS_MCP_LAMBDA_PORT
+          value: "8766"
+        - name: AWS_MCP_MESSAGING_PORT
+          value: "8767"
+        - name: AWS_MCP_MQ_PORT
+          value: "8768"
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          exec:
+            command:
+            - /app/health_check.sh
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /app/health_check.sh
+          initialDelaySeconds: 15
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 3
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: mcp-aws-config

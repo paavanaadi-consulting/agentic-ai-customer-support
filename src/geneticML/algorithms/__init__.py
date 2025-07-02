@@ -1,3 +1,0 @@
-"""
-Genetic algorithm implementations
-"""

@@ -85,40 +85,40 @@ test-mcp:
 # Test API component
 test-api:
 	@echo "🌐 Testing API component..."
-	@./cicd/scripts/test/test-api.sh
+	@./ops/scripts/test/test-api.sh
 	@echo "✅ API testing complete!"
 
 # Run API demo
 api-demo:
 	@echo "🎮 Running API v1 demo..."
-	@./cicd/scripts/test/demo-api-v1.sh
+	@./ops/scripts/test/demo-api-v1.sh
 	@echo "✅ API demo complete!"
 
 # Docker Commands
 docker-build:
 	@echo "🔨 Building all Docker services..."
-	@./cicd/scripts/main/build-all.sh
+	@./ops/scripts/main/build-all.sh
 
 docker-start:
 	@echo "🚀 Starting all Docker services..."
-	@./cicd/scripts/main/start-all.sh
+	@./ops/scripts/main/start-all.sh
 
 docker-stop:
 	@echo "🛑 Stopping all Docker services..."
-	@./cicd/scripts/main/stop-all.sh
+	@./ops/scripts/main/stop-all.sh
 
 # API-specific Docker commands
 api-build:
 	@echo "🔨 Building API service..."
-	@./cicd/scripts/main/api/build-api.sh
+	@./ops/scripts/main/api/build-api.sh
 
 api-start:
 	@echo "🚀 Starting API service..."
-	@./cicd/scripts/main/api/start-api.sh
+	@./ops/scripts/main/api/start-api.sh
 
 api-stop:
 	@echo "🛑 Stopping API service..."
-	@./cicd/scripts/main/api/stop-api.sh
+	@./ops/scripts/main/api/stop-api.sh
 
 # Clean up test artifacts
 clean:
