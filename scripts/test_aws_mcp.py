@@ -14,7 +14,7 @@ import argparse
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.mcp.aws_mcp_client import OptimizedAWSMCPClient, AWSClientError
-from src.mcp.aws_mcp_server import AWSMCPServer
+# AWSMCPServer is no longer available - this test needs to be updated to use the new AWS MCP client
 from config.settings import CONFIG
 
 # Configure logging
@@ -227,15 +227,16 @@ async def run_tests():
     # Create and start AWS MCP server (if not skipped)
     server = None
     if not args.no_server:
-        logger.info("Starting AWS MCP server...")
-        server = AWSMCPServer(
+        logger.info("Starting AWS MCP client...")
+        # Note: AWSMCPServer was removed as part of MCP cleanup
+        # Using OptimizedAWSMCPClient directly
+        server = OptimizedAWSMCPClient(
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
-            region_name=region_name,
-            use_external_mcp=False  # Use internal implementation for testing
+            region_name=region_name
         )
-        await server.start()
-        logger.info("AWS MCP server started")
+        await server.connect()
+        logger.info("AWS MCP client started")
     
     try:
         # Create and connect AWS MCP client

@@ -43,7 +43,7 @@ class NativeDBConnector:
         logger.info(f"Connected to SQLite database: {self.db_path}")
 
 class NativeMCPClient:
-    """Native MCP client using existing MCP servers"""
+    """Native MCP client using existing MCP clients"""
     
     def __init__(self):
         self.db_path = "data/test.db"
@@ -58,21 +58,14 @@ class NativeMCPClient:
         # Import existing MCP servers
         sys.path.insert(0, str(Path(__file__).parent.parent))
         
-        # Try to use external postgres-mcp, fallback to our implementation
-        try:
-            # from mcp.postgres_mcp_wrapper import PostgresMCPWrapper  # REMOVED
-            # For local testing, use SQLite connection string format
-            # NOTE: PostgresMCPWrapper removed
-            # self.database_server = PostgresMCPWrapper(f"sqlite:///{self.db_path}")
-            self.database_server = None  # Use OptimizedPostgreSQLMCPClient instead
-        except ImportError:
-            logger.warning("External postgres-mcp not available, using fallback database server")
-            from mcp.database_mcp_server import DatabaseMCPServer
-            await self.db_connector.connect()
-            self.database_server = DatabaseMCPServer(self.db_connector)
-        
+        # Use new optimized MCP client implementations
+        from src.mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient
         from src.mcp.kafka_mcp_client import OptimizedKafkaMCPClient
-        from mcp.aws_mcp_wrapper import AWSMCPWrapper, ExternalMCPConfig
+        from src.mcp.aws_mcp_client import OptimizedAWSMCPClient
+        
+        # Create database client
+        await self.db_connector.connect()
+        self.database_server = OptimizedPostgreSQLMCPClient(f"sqlite:///{self.db_path}")
         
         self.kafka_server = OptimizedKafkaMCPClient(
             bootstrap_servers="localhost:9092",
@@ -80,19 +73,18 @@ class NativeMCPClient:
             group_id="test-group"
         )
         
-        # Initialize AWS MCP wrapper with configuration
-        aws_config = ExternalMCPConfig(
+        # Initialize AWS MCP client
+        self.aws_server = OptimizedAWSMCPClient(
             aws_profile=os.getenv('AWS_PROFILE', 'default'),
-            aws_region=os.getenv('AWS_REGION', 'us-east-1'),
-            use_uvx=os.getenv('AWS_MCP_USE_UVX', 'true').lower() == 'true',
-            fallback_to_custom=os.getenv('AWS_MCP_FALLBACK_TO_CUSTOM', 'true').lower() == 'true'
+            region_name=os.getenv('AWS_REGION', 'us-east-1'),
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
         )
-        self.aws_server = AWSMCPWrapper(aws_config)
         
-        # Start servers
-        await self.database_server.start()
-        await self.kafka_server.start()
-        await self.aws_server.initialize()
+        # Connect to servers
+        await self.database_server.connect()
+        await self.kafka_server.connect()
+        await self.aws_server.connect()
         
         logger.info("Native MCP client started with external/wrapped MCP servers")
         
