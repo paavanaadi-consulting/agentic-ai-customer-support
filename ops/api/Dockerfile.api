@@ -25,6 +25,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy only API-related files
 COPY src/api/ ./src/api/
 COPY src/services/ ./src/services/
+COPY src/mcp/ ./src/mcp/
 COPY config/ ./config/
 COPY src/utils/ ./src/utils/
 
