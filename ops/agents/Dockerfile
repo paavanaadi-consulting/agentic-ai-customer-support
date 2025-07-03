@@ -10,16 +10,16 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY ops/agents/requirements-agents.txt .
+COPY requirements-agents.txt .
 RUN pip install --no-cache-dir -r requirements-agents.txt
 
 # Copy the agents source code
-COPY agents/ ./agents/
-COPY src/ ./src/
-COPY config/ ./config/
+COPY ../../agents/ ./agents/
+COPY ../../src/ ./src/
+COPY ../../config/ ./config/
 
 # Copy main entry point for agents service
-COPY ops/agents/agents_main.py .
+COPY agents_main.py .
 
 # Set environment variables
 ENV PYTHONPATH=/app

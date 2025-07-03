@@ -11,11 +11,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
-COPY ops/mcp-postgres/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the main application file
-COPY ops/mcp-postgres/mcp_postgres_main.py .
+COPY mcp_postgres_main.py .
 
 # Expose port
 EXPOSE 8001

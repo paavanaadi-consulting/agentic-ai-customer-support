@@ -6,25 +6,25 @@ CICD_DIR="./ops"
 case "$1" in
     "build")
         echo "🔨 Building the system..."
-        $CICD_DIR/build.sh
+        $CICD_DIR/scripts/main/build.sh
         ;;
     "start")
         echo "🚀 Starting the system..."
-        $CICD_DIR/start.sh
+        $CICD_DIR/scripts/main/start.sh
         ;;
     "stop")
         echo "🛑 Stopping the system..."
-        $CICD_DIR/stop.sh
+        $CICD_DIR/scripts/main/stop.sh
         ;;
     "restart")
         echo "🔄 Restarting the system..."
-        $CICD_DIR/stop.sh
+        $CICD_DIR/scripts/main/stop.sh
         sleep 5
-        $CICD_DIR/start.sh
+        $CICD_DIR/scripts/main/start.sh
         ;;
     "cleanup")
         echo "🧹 Cleaning up the system..."
-        $CICD_DIR/cleanup.sh
+        $CICD_DIR/scripts/main/cleanup.sh
         ;;
     "logs")
         echo "📋 Showing logs..."
@@ -36,19 +36,19 @@ case "$1" in
         ;;
     "api-build")
         echo "🔨 Building API component..."
-        $CICD_DIR/build-api.sh
+        $CICD_DIR/scripts/main/api/build-api.sh
         ;;
     "api-start")
         echo "🚀 Starting API component..."
-        $CICD_DIR/start-api.sh
+        $CICD_DIR/scripts/main/api/start-api.sh
         ;;
     "api-stop")
         echo "🛑 Stopping API component..."
-        $CICD_DIR/stop-api.sh
+        $CICD_DIR/scripts/main/api/stop-api.sh
         ;;
     "api-cleanup")
         echo "🧹 Cleaning up API component..."
-        $CICD_DIR/cleanup-api.sh
+        $CICD_DIR/scripts/main/api/cleanup-api.sh
         ;;
     "api-logs")
         echo "📋 Showing API logs..."

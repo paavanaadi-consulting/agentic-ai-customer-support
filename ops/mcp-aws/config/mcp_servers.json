@@ -19,5 +19,166 @@
     "log_level": "INFO",
     "timeout": 30,
     "max_connections": 100
+  },
+  "kendra": {
+    "enabled": true,
+    "port": 8769,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "keyspaces": {
+    "enabled": true,
+    "port": 8770,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "neptune": {
+    "enabled": true,
+    "port": 8771,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "qindex": {
+    "enabled": true,
+    "port": 8772,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "rekognition": {
+    "enabled": true,
+    "port": 8773,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "bedrock-data": {
+    "enabled": true,
+    "port": 8774,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "diagram": {
+    "enabled": true,
+    "port": 8775,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "documentation": {
+    "enabled": true,
+    "port": 8776,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "healthomics": {
+    "enabled": true,
+    "port": 8777,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "location": {
+    "enabled": true,
+    "port": 8778,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "serverless": {
+    "enabled": true,
+    "port": 8779,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "support": {
+    "enabled": true,
+    "port": 8780,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "bedrock-kb": {
+    "enabled": true,
+    "port": 8781,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "cdk": {
+    "enabled": true,
+    "port": 8782,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "cfn": {
+    "enabled": true,
+    "port": 8783,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "cloudwatch-logs": {
+    "enabled": true,
+    "port": 8784,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "cost-analysis": {
+    "enabled": true,
+    "port": 8785,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "cost-explorer": {
+    "enabled": true,
+    "port": 8786,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "dynamodb": {
+    "enabled": true,
+    "port": 8787,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "ecs": {
+    "enabled": true,
+    "port": 8788,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "eks": {
+    "enabled": true,
+    "port": 8789,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "iam": {
+    "enabled": true,
+    "port": 8790,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
+  },
+  "stepfunctions": {
+    "enabled": true,
+    "port": 8791,
+    "log_level": "INFO",
+    "timeout": 30,
+    "max_connections": 100
   }
 }
