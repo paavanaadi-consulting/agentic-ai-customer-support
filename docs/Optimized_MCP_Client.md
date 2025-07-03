@@ -212,15 +212,16 @@ client = OptimizedPostgreSQLMCPClient(connection_string=connection_string)
 await client.connect()
 ```
 
-### From data_sources/mcp_client.py
+### From data_sources/mcp_client.py (REMOVED)
 ```python
-# OLD
-from src.data_sources.mcp_client import PostgreSQLMCPClient
-client = PostgreSQLMCPClient("http://localhost:8001")
+# OLD (no longer available - files removed during cleanup)
+# from src.data_sources.mcp_client import PostgreSQLMCPClient
+# client = PostgreSQLMCPClient("http://localhost:8001")
 
-# NEW
-from src.mcp.optimized_postgres_mcp_client import get_optimized_mcp_client
-client = await get_optimized_mcp_client(mcp_server_url="http://localhost:8001")
+# NEW - Use optimized MCP client
+from src.mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient
+client = OptimizedPostgreSQLMCPClient(mcp_server_url="http://localhost:8001")
+await client.connect()
 ```
 
 ## Error Handling

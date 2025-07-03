@@ -23,14 +23,16 @@ Dependencies  DI Container  Business    Protocol   Database
 
 ## Components
 
-### 1. MCP Client (`src/data_sources/mcp_client.py`)
+### 1. MCP Client (`src/mcp/postgres_mcp_client.py`)
 
-The `PostgreSQLMCPClient` class provides:
+**UPDATED**: The MCP client has been moved to the dedicated MCP package.
+
+The `OptimizedPostgreSQLMCPClient` class provides:
 - **Connection Management**: Async HTTP client for MCP server communication
 - **Tool Operations**: Methods for calling MCP tools (create_customer, get_tickets, etc.)
 - **Resource Operations**: Methods for reading MCP resources (analytics, summaries)
 - **Error Handling**: Custom `MCPClientError` exception handling
-- **Singleton Pattern**: Global `get_mcp_client()` function
+- **Singleton Pattern**: Global `get_postgres_mcp_client()` function
 
 Key methods:
 ```python
@@ -299,8 +301,8 @@ For production deployment:
 # Test service imports
 python -c "from src.services.service_factory import get_service_factory; print('OK')"
 
-# Test MCP client
-python -c "from src.data_sources.mcp_client import get_mcp_client; print('OK')"
+# Test MCP client (updated path)
+python -c "from src.mcp.postgres_mcp_client import OptimizedPostgreSQLMCPClient; print('OK')"
 
 # Test API startup
 python scripts/start_integrated_api.py
