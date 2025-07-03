@@ -1,0 +1,74 @@
+[tool.pytest.ini_options]
+# Pytest configuration for MCP test suite
+minversion = "6.0"
+testpaths = ["tests/mcp"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Test discovery and execution
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+    "--maxfail=10",
+    "--durations=10",
+]
+
+# Async testing
+asyncio_mode = "auto"
+
+# Markers for different test categories
+markers = [
+    "unit: Unit tests for individual components",
+    "integration: Integration tests between components", 
+    "performance: Performance and load tests",
+    "error: Error handling and edge case tests",
+    "aws: AWS-specific tests (may require AWS credentials)",
+    "kafka: Kafka-specific tests (may require Kafka instance)",
+    "postgres: PostgreSQL-specific tests (may require database)",
+    "slow: Tests that take longer to run",
+    "external: Tests that require external services",
+]
+
+# Logging configuration
+log_cli = false
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+
+# Warnings
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["src/mcp"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/env/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+sort = "cover"
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "test-results/mcp-coverage"
+title = "MCP Test Coverage Report"
