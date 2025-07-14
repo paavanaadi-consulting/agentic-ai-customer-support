@@ -157,12 +157,14 @@ docs/
 * *Knowledge Sharing*: Accessible documentation for all stakeholders
 {info}
 
-### 4. 📁 `experiments/` - ML Experiments & Research
+h3. 4. 📁 {{experiments/}} - ML Experiments & Research
 
-**Purpose**: Organized experimentation and research workspace
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Organized experimentation and research workspace
+{panel}
 
-**Structure**:
-```
+*Structure:*
+{code:language=text}
 experiments/
 ├── research/                    # Research experiments
 │   ├── baseline_models/         # Baseline model experiments
@@ -182,20 +184,23 @@ experiments/
     ├── metrics/                 # Performance metrics
     ├── visualizations/          # Result visualizations
     └── reports/                 # Experiment reports
-```
+{code}
 
-**Non-Functional Characteristics**:
-- **Reproducibility**: All experiments tracked and versioned
-- **Comparison**: Standardized metrics for model comparison
-- **Efficiency**: Parallel experiment execution
-- **Documentation**: Automated experiment logging
+{info:title=Non-Functional Characteristics}
+* *Reproducibility*: All experiments tracked and versioned
+* *Comparison*: Standardized metrics for model comparison
+* *Efficiency*: Parallel experiment execution
+* *Documentation*: Automated experiment logging
+{info}
 
-### 5. 📁 `models/` - Model Artifacts & Registry
+h3. 5. 📁 {{models/}} - Model Artifacts & Registry
 
-**Purpose**: Centralized model storage and registry
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Centralized model storage and registry
+{panel}
 
-**Structure**:
-```
+*Structure:*
+{code:language=text}
 models/
 ├── trained_models/              # Trained model artifacts
 │   ├── classification/          # Classification models
@@ -215,20 +220,23 @@ models/
     ├── tensorflow_serving/      # TensorFlow Serving format
     ├── torchserve/              # TorchServe format
     └── triton/                  # NVIDIA Triton format
-```
+{code}
 
-**Non-Functional Characteristics**:
-- **Versioning**: Semantic versioning for all models
-- **Metadata**: Rich metadata for model discovery
-- **Optimization**: Multiple formats for different deployment targets
-- **Governance**: Model approval and lifecycle management
+{info:title=Non-Functional Characteristics}
+* *Versioning*: Semantic versioning for all models
+* *Metadata*: Rich metadata for model discovery
+* *Optimization*: Multiple formats for different deployment targets
+* *Governance*: Model approval and lifecycle management
+{info}
 
-### 6. 📁 `notebooks/` - Jupyter Notebooks
+h3. 6. 📁 {{notebooks/}} - Jupyter Notebooks
 
-**Purpose**: Interactive development and analysis environment
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Interactive development and analysis environment
+{panel}
 
-**Structure**:
-```
+*Structure:*
+{code:language=text}
 notebooks/
 ├── exploration/                 # Data exploration notebooks
 │   ├── eda/                     # Exploratory Data Analysis
@@ -250,20 +258,23 @@ notebooks/
 └── reports/                     # Automated report generation
     ├── model_reports/           # Model performance reports
     └── data_reports/            # Data quality reports
-```
+{code}
 
-**Non-Functional Characteristics**:
-- **Organization**: Clear separation by purpose and domain
-- **Reproducibility**: Parameterized notebooks for automation
-- **Version Control**: Notebook versioning best practices
-- **Collaboration**: Shared notebook environment with standards
+{info:title=Non-Functional Characteristics}
+* *Organization*: Clear separation by purpose and domain
+* *Reproducibility*: Parameterized notebooks for automation
+* *Version Control*: Notebook versioning best practices
+* *Collaboration*: Shared notebook environment with standards
+{info}
 
-### 7. 📁 `ops/` - MLOps & Infrastructure
+h3. 7. 📁 {{ops/}} - MLOps & Infrastructure
 
-**Purpose**: Production deployment and infrastructure management
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Production deployment and infrastructure management
+{panel}
 
-**Structure**:
-```
+*Structure:*
+{code:language=text}
 ops/
 ├── ci_cd/                       # CI/CD pipelines
 │   ├── github_actions/          # GitHub Actions workflows
@@ -290,20 +301,23 @@ ops/
     ├── data_lake/               # Data lake setup
     ├── feature_store/           # Feature store infrastructure
     └── vector_database/         # Vector database setup
-```
+{code}
 
-**Non-Functional Characteristics**:
-- **Scalability**: Auto-scaling inference infrastructure
-- **Reliability**: High availability and disaster recovery
-- **Security**: Secure model and data access
-- **Observability**: Comprehensive monitoring and alerting
+{info:title=Non-Functional Characteristics}
+* *Scalability*: Auto-scaling inference infrastructure
+* *Reliability*: High availability and disaster recovery
+* *Security*: Secure model and data access
+* *Observability*: Comprehensive monitoring and alerting
+{info}
 
-### 8. 📁 `pipelines/` - ETL & ML Pipelines
+h3. 8. 📁 {{pipelines/}} - ETL & ML Pipelines
 
-**Purpose**: Automated data processing and ML workflows
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Automated data processing and ML workflows
+{panel}
 
-**Structure**:
-```
+*Structure:*
+{code:language=text}
 pipelines/
 ├── etl/                         # ETL pipelines
 │   ├── ingestion/               # Data ingestion pipelines
@@ -332,20 +346,23 @@ pipelines/
     ├── data_quality/            # Data quality monitoring
     ├── model_performance/       # Model performance tracking
     └── drift_detection/         # Drift detection pipelines
-```
+{code}
 
-**Non-Functional Characteristics**:
-- **Automation**: Fully automated pipeline execution
-- **Scalability**: Distributed processing capabilities
-- **Reliability**: Error handling and retry mechanisms
-- **Monitoring**: Comprehensive pipeline observability
+{info:title=Non-Functional Characteristics}
+* *Automation*: Fully automated pipeline execution
+* *Scalability*: Distributed processing capabilities
+* *Reliability*: Error handling and retry mechanisms
+* *Monitoring*: Comprehensive pipeline observability
+{info}
 
-### 9. 📁 `src/` - Source Code Architecture
+h3. 9. 📁 {{src/}} - Source Code Architecture
 
-**Purpose**: Core application logic with modular ML/AI design
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Core application logic with modular ML/AI design
+{panel}
 
-**Structure**:
-```
+*Structure:*
+{code:language=text}
 src/
 ├── data/                        # Data processing modules
 │   ├── extractors/              # Data extraction components
@@ -397,15 +414,14 @@ src/
     ├── visualization/           # Plotting and visualization
     ├── logging/                 # Structured logging
     └── config/                  # Configuration utilities
-```
+{code}
 
-**Non-Functional Characteristics**:
-- **Modularity**: Clear separation of ML pipeline components
-- **Scalability**: Distributed processing support
-- **Reusability**: Reusable components across projects
-- **Maintainability**: Well-structured ML code organization
-
----
+{info:title=Non-Functional Characteristics}
+* *Modularity*: Clear separation of ML pipeline components
+* *Scalability*: Distributed processing support
+* *Reusability*: Reusable components across projects
+* *Maintainability*: Well-structured ML code organization
+{info}
 
 h2. 🎯 ML/AI Architecture Patterns & Best Practices
 
@@ -488,9 +504,9 @@ ML_CONFIG = {
 }
 {code}
 
-### 2. Model Training Pipeline
+h3. 2. Model Training Pipeline
 
-```python
+{code:language=python}
 # ✅ Good: Structured training pipeline
 class ModelTrainingPipeline:
     def __init__(self, 
@@ -526,77 +542,7 @@ class ModelTrainingPipeline:
         except ModelTrainingError as e:
             logger.error(f"Model training failed: {e}")
             return TrainingResult.training_error(str(e))
-```
-
-### 3. Feature Store Integration
-
-```python
-# ✅ Good: Feature store abstraction
-class FeatureStore:
-    def __init__(self, backend: FeatureStoreBackend):
-        self.backend = backend
-    
-    async def get_features(self, 
-                          entity_ids: List[str], 
-                          feature_names: List[str],
-                          timestamp: Optional[datetime] = None) -> pd.DataFrame:
-        try:
-            features = await self.backend.retrieve_features(
-                entity_ids=entity_ids,
-                feature_names=feature_names,
-                timestamp=timestamp
-            )
-            return self.validate_features(features)
-        except FeatureStoreError as e:
-            logger.error(f"Feature retrieval failed: {e}")
-            raise
-    
-    async def register_feature_view(self, feature_view: FeatureView):
-        await self.backend.register_feature_view(feature_view)
-        logger.info(f"Feature view {feature_view.name} registered successfully")
-```
-
-### 4. Model Monitoring
-
-```python
-# ✅ Good: Comprehensive model monitoring
-class ModelMonitor:
-    def __init__(self, 
-                 metrics_collector: MetricsCollector,
-                 drift_detector: DriftDetector,
-                 alerting_service: AlertingService):
-        self.metrics_collector = metrics_collector
-        self.drift_detector = drift_detector
-        self.alerting_service = alerting_service
-    
-    async def monitor_prediction(self, 
-                               model_id: str,
-                               input_data: Dict,
-                               prediction: Any,
-                               ground_truth: Optional[Any] = None):
-        # Collect prediction metrics
-        await self.metrics_collector.record_prediction(
-            model_id, input_data, prediction, ground_truth
-        )
-        
-        # Check for data drift
-        drift_detected = await self.drift_detector.check_drift(
-            model_id, input_data
-        )
-        
-        if drift_detected:
-            await self.alerting_service.send_drift_alert(model_id)
-        
-        # Check model performance
-        if ground_truth:
-            performance_degraded = await self.check_performance_degradation(
-                model_id, prediction, ground_truth
-            )
-            if performance_degraded:
-                await self.alerting_service.send_performance_alert(model_id)
-```
-
----
+{code}
 
 h2. 📋 ML/AI Implementation Checklist
 
