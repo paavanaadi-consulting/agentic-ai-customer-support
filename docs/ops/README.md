@@ -1,13 +1,96 @@
-# Kubernetes Deployment for Agentic AI Customer Support
+# DevOps Infrastructure Overview
 
-This directory contains comprehensive Kubernetes deployment configurations for the Agentic AI Customer Support application, supporting deployment across AWS, Azure, and GCP.
+This directory contains comprehensive documentation for the DevOps infrastructure components of the Agentic AI Customer Support system.
 
-## 📁 Directory Structure
+## 📚 Documentation Structure
+
+- **[HELM_DOCUMENTATION.md](./HELM_DOCUMENTATION.md)** - Complete Helm chart configuration and deployment guide
+- **[KUBERNETES_DOCUMENTATION.md](./KUBERNETES_DOCUMENTATION.md)** - Kubernetes infrastructure manifests and operations
+- **[TERRAFORM_DOCUMENTATION.md](./TERRAFORM_DOCUMENTATION.md)** - Infrastructure as Code for cloud provisioning
+
+## 🏗️ Architecture Overview
+
+The Agentic AI Customer Support system uses a three-layer DevOps approach:
 
 ```
-ops/
-├── kubernetes/                 # Kubernetes manifests
-│   ├── base/                  # Base manifests (cloud-agnostic)
+┌─────────────────────────────────────────────────────────────┐
+│                    INFRASTRUCTURE LAYER                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │  Terraform  │  │     AWS     │  │Multi-Cloud │         │
+│  │     IaC     │  │     EKS     │  │  Support   │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                   ORCHESTRATION LAYER                       │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │ Kubernetes  │  │  Kustomize  │  │   Ingress   │         │
+│  │ Manifests   │  │  Overlays   │  │ Controller  │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                    PACKAGE LAYER                           │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │    Helm     │  │  Multi-Env  │  │   Cloud     │         │
+│  │   Charts    │  │   Values    │  │ Providers   │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 🎯 Quick Start Guide
+
+### Prerequisites
+
+- **Kubernetes Cluster**: 1.20+ (EKS, AKS, GKE, or local)
+- **Helm**: 3.0+
+- **kubectl**: Configured for your cluster
+- **Terraform**: 1.0+ (for infrastructure provisioning)
+- **AWS CLI**: For AWS deployments
+
+### 1. Infrastructure Provisioning (Terraform)
+
+```bash
+# Clone the repository
+git clone https://github.com/agentic-ai/customer-support.git
+cd agentic-ai-customer-support
+
+# Deploy infrastructure
+cd ops/terraform/aws/environments/production
+terraform init
+terraform plan
+terraform apply
+
+# Update kubeconfig
+aws eks update-kubeconfig --region us-east-1 --name agentic-ai-support
+```
+
+### 2. Application Deployment (Helm)
+
+```bash
+# Add Bitnami repository for dependencies
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+
+# Deploy the application
+cd ops/helm
+helm install agentic-ai-support . \
+  --namespace agentic-ai \
+  --create-namespace \
+  -f values-aws.yaml
+
+# Verify deployment
+kubectl get pods -n agentic-ai
+```
+
+### 3. Alternative: Raw Kubernetes Manifests
+
+```bash
+# Deploy base configuration
+kubectl apply -k ops/kubernetes/base/
+
+# Or deploy environment-specific configuration
+kubectl apply -k ops/kubernetes/overlays/production/aws/
 │   └── overlays/              # Cloud-specific overlays
 │       ├── aws/               # AWS-specific configurations
 │       ├── azure/             # Azure-specific configurations
