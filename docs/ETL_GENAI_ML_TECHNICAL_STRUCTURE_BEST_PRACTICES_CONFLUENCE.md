@@ -1,0 +1,683 @@
+h1. ETL/GenAI/ML System: Technical Structure & Best Practices
+
+h2. {panel:title=📋 Executive Summary|borderColor=#ccc|bgColor=#f0f0f0}
+This document provides a comprehensive guide to the high-level technical structure for ETL, Generative AI, and Machine Learning repositories. It establishes best practices for implementing scalable, maintainable, and production-ready data processing and AI/ML systems. The structure follows industry-standard patterns for ML pipelines, data processing workflows, and AI model deployment with MLOps integration.
+{panel}
+
+h2. 🏗️ High-Level Technical Structure
+
+h3. Root Directory Organization
+
+{code:language=text}
+etl-genai-ml-project/
+├── 📁 config/                    # Configuration Management
+├── 📁 data/                      # Data Storage & Versioning
+├── 📁 docs/                      # Documentation Hub
+├── 📁 experiments/               # ML Experiments & Research
+├── 📁 models/                    # Model Artifacts & Registry
+├── 📁 notebooks/                 # Jupyter Notebooks
+├── 📁 ops/                       # MLOps & Infrastructure
+├── 📁 pipelines/                 # ETL & ML Pipelines
+├── 📁 scripts/                   # Automation Scripts
+├── 📁 src/                       # Source Code
+├── 📁 tests/                     # Comprehensive Testing
+├── 🐳 docker-compose.yml        # Container Orchestration
+├── 📄 main.py                   # Application Entry Point
+├── 🛠️ Makefile                  # Build Automation
+├── 📦 pyproject.toml            # Python Project Configuration
+├── 📊 dvc.yaml                  # Data Version Control
+├── 🔧 mlflow.yaml               # MLflow Configuration
+├── 📖 readme.md                 # Project Documentation
+└── ⚙️ requirements.txt          # Python Dependencies
+{code}
+
+h2. 📂 Detailed Folder Analysis
+
+h3. 1. 📁 {{config/}} - Configuration Management Layer
+
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Centralized configuration for data pipelines, model training, and deployment
+{panel}
+
+*Structure:*
+{code:language=text}
+config/
+├── __init__.py                   # Package initialization
+├── data_sources.yaml            # Data source configurations
+├── model_configs/               # Model-specific configurations
+│   ├── llm_config.yaml          # LLM configurations
+│   ├── training_config.yaml     # Training parameters
+│   └── inference_config.yaml    # Inference settings
+├── pipeline_configs/            # Pipeline configurations
+│   ├── etl_config.yaml          # ETL pipeline settings
+│   ├── feature_config.yaml      # Feature engineering
+│   └── validation_config.yaml   # Data validation rules
+├── deployment/                  # Deployment configurations
+│   ├── dev.yaml                 # Development environment
+│   ├── staging.yaml             # Staging environment
+│   └── prod.yaml                # Production environment
+└── settings.py                  # Main settings aggregator
+{code}
+
+{info:title=Non-Functional Characteristics}
+* *Environment Isolation*: Separate configs for dev/staging/prod
+* *Model Versioning*: Configuration versioning aligned with model versions
+* *Hyperparameter Management*: Centralized hyperparameter storage
+* *Data Lineage*: Configuration tracking for reproducibility
+{info}
+
+{tip:title=Best Practices}
+* Use YAML for complex nested configurations
+* Implement configuration validation with Pydantic
+* Version control all configuration changes
+* Support A/B testing configurations
+{tip}
+
+h3. 2. 📁 {{data/}} - Data Storage & Versioning
+
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Structured data storage with version control and lineage tracking
+{panel}
+
+*Structure:*
+{code:language=text}
+data/
+├── raw/                         # Raw, immutable data
+│   ├── external/                # External data sources
+│   ├── internal/                # Internal data sources
+│   └── streaming/               # Real-time data streams
+├── interim/                     # Intermediate processed data
+│   ├── cleaned/                 # Cleaned datasets
+│   ├── transformed/             # Transformed datasets
+│   └── features/                # Feature engineered data
+├── processed/                   # Final processed data
+│   ├── training/                # Training datasets
+│   ├── validation/              # Validation datasets
+│   └── test/                    # Test datasets
+├── external/                    # External datasets
+├── embeddings/                  # Vector embeddings storage
+├── synthetic/                   # Synthetic/generated data
+└── metadata/                    # Data catalog and metadata
+    ├── schemas/                 # Data schemas
+    ├── lineage/                 # Data lineage tracking
+    └── quality/                 # Data quality reports
+{code}
+
+{info:title=Non-Functional Characteristics}
+* *Immutability*: Raw data never modified
+* *Versioning*: DVC integration for data version control
+* *Lineage*: Complete data transformation tracking
+* *Quality*: Automated data quality monitoring
+{info}
+
+{tip:title=Best Practices}
+* Use DVC for large file versioning
+* Implement data validation pipelines
+* Maintain data catalogs and schemas
+* Track data lineage through all transformations
+{tip}
+
+h3. 3. 📁 {{docs/}} - Documentation Hub
+
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Comprehensive documentation for data, models, and processes
+{panel}
+
+*Structure:*
+{code:language=text}
+docs/
+├── api/                         # API documentation
+│   ├── model_apis.md            # Model serving APIs
+│   └── data_apis.md             # Data access APIs
+├── data/                        # Data documentation
+│   ├── data_dictionary.md       # Data field definitions
+│   ├── data_sources.md          # Source system documentation
+│   └── data_quality.md          # Quality metrics and SLAs
+├── models/                      # Model documentation
+│   ├── model_cards/             # Model cards for each model
+│   ├── training_reports/        # Training experiment reports
+│   └── performance_analysis/    # Model performance analysis
+├── pipelines/                   # Pipeline documentation
+│   ├── etl_architecture.md      # ETL pipeline architecture
+│   ├── ml_pipeline.md           # ML pipeline documentation
+│   └── deployment_guide.md      # Deployment procedures
+├── experiments/                 # Experiment documentation
+│   ├── hypothesis_log.md        # Research hypotheses
+│   └── experiment_results/      # Detailed experiment results
+└── operations/                  # Operational documentation
+    ├── monitoring.md            # Monitoring and alerting
+    ├── troubleshooting.md       # Common issues and solutions
+    └── runbooks/                # Operational runbooks
+{code}
+
+{info:title=Non-Functional Characteristics}
+* *Model Transparency*: Comprehensive model cards and documentation
+* *Reproducibility*: Detailed experiment and pipeline documentation
+* *Compliance*: Documentation for regulatory requirements
+* *Knowledge Sharing*: Accessible documentation for all stakeholders
+{info}
+
+h3. 4. 📁 {{experiments/}} - ML Experiments & Research
+
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Organized experimentation and research workspace
+{panel}
+
+*Structure:*
+{code:language=text}
+experiments/
+├── research/                    # Research experiments
+│   ├── baseline_models/         # Baseline model experiments
+│   ├── feature_engineering/     # Feature engineering experiments
+│   └── architecture_search/     # Neural architecture search
+├── hyperparameter_tuning/       # Hyperparameter optimization
+│   ├── optuna_studies/          # Optuna optimization studies
+│   ├── grid_search/             # Grid search experiments
+│   └── bayesian_optimization/   # Bayesian optimization
+├── ablation_studies/            # Ablation studies
+├── benchmarking/                # Model benchmarking
+├── llm_experiments/             # LLM-specific experiments
+│   ├── prompt_engineering/      # Prompt optimization
+│   ├── fine_tuning/             # Fine-tuning experiments
+│   └── rag_experiments/         # RAG pipeline experiments
+└── results/                     # Experiment results
+    ├── metrics/                 # Performance metrics
+    ├── visualizations/          # Result visualizations
+    └── reports/                 # Experiment reports
+{code}
+
+{info:title=Non-Functional Characteristics}
+* *Reproducibility*: All experiments tracked and versioned
+* *Comparison*: Standardized metrics for model comparison
+* *Efficiency*: Parallel experiment execution
+* *Documentation*: Automated experiment logging
+{info}
+
+h3. 5. 📁 {{models/}} - Model Artifacts & Registry
+
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Centralized model storage and registry
+{panel}
+
+*Structure:*
+{code:language=text}
+models/
+├── trained_models/              # Trained model artifacts
+│   ├── classification/          # Classification models
+│   ├── regression/              # Regression models
+│   ├── nlp/                     # NLP models
+│   ├── computer_vision/         # CV models
+│   └── llm/                     # Large Language Models
+├── model_registry/              # Model metadata registry
+│   ├── model_index.json         # Model catalog
+│   ├── versions/                # Version metadata
+│   └── lineage/                 # Model lineage tracking
+├── checkpoints/                 # Training checkpoints
+├── embeddings/                  # Pre-trained embeddings
+├── onnx_models/                 # ONNX model format
+├── quantized_models/            # Quantized models for deployment
+└── serving/                     # Models prepared for serving
+    ├── tensorflow_serving/      # TensorFlow Serving format
+    ├── torchserve/              # TorchServe format
+    └── triton/                  # NVIDIA Triton format
+{code}
+
+{info:title=Non-Functional Characteristics}
+* *Versioning*: Semantic versioning for all models
+* *Metadata*: Rich metadata for model discovery
+* *Optimization*: Multiple formats for different deployment targets
+* *Governance*: Model approval and lifecycle management
+{info}
+
+h3. 6. 📁 {{notebooks/}} - Jupyter Notebooks
+
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Interactive development and analysis environment
+{panel}
+
+*Structure:*
+{code:language=text}
+notebooks/
+├── exploration/                 # Data exploration notebooks
+│   ├── eda/                     # Exploratory Data Analysis
+│   ├── data_profiling/          # Data profiling and quality
+│   └── feature_analysis/        # Feature importance analysis
+├── modeling/                    # Model development notebooks
+│   ├── baseline_models/         # Baseline model development
+│   ├── advanced_models/         # Advanced model experiments
+│   └── ensemble_methods/        # Ensemble model development
+├── evaluation/                  # Model evaluation notebooks
+│   ├── performance_analysis/    # Performance evaluation
+│   ├── bias_fairness/           # Bias and fairness analysis
+│   └── interpretability/        # Model interpretability
+├── genai/                       # Generative AI notebooks
+│   ├── prompt_engineering/      # Prompt design and testing
+│   ├── fine_tuning/             # Model fine-tuning
+│   └── rag_development/         # RAG system development
+├── visualization/               # Data and result visualization
+└── reports/                     # Automated report generation
+    ├── model_reports/           # Model performance reports
+    └── data_reports/            # Data quality reports
+{code}
+
+{info:title=Non-Functional Characteristics}
+* *Organization*: Clear separation by purpose and domain
+* *Reproducibility*: Parameterized notebooks for automation
+* *Version Control*: Notebook versioning best practices
+* *Collaboration*: Shared notebook environment with standards
+{info}
+
+h3. 7. 📁 {{ops/}} - MLOps & Infrastructure
+
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Production deployment and infrastructure management
+{panel}
+
+*Structure:*
+{code:language=text}
+ops/
+├── ci_cd/                       # CI/CD pipelines
+│   ├── github_actions/          # GitHub Actions workflows
+│   ├── jenkins/                 # Jenkins pipeline definitions
+│   └── airflow/                 # Airflow DAGs
+├── monitoring/                  # Monitoring and observability
+│   ├── model_monitoring/        # Model performance monitoring
+│   ├── data_monitoring/         # Data drift detection
+│   └── infrastructure/          # Infrastructure monitoring
+├── deployment/                  # Deployment configurations
+│   ├── kubernetes/              # K8s manifests
+│   ├── docker/                  # Container definitions
+│   ├── serverless/              # Serverless deployments
+│   └── edge/                    # Edge deployment configs
+├── infrastructure/              # Infrastructure as Code
+│   ├── terraform/               # Terraform configurations
+│   ├── ansible/                 # Ansible playbooks
+│   └── helm/                    # Helm charts
+├── model_serving/               # Model serving infrastructure
+│   ├── batch_inference/         # Batch processing setup
+│   ├── real_time_serving/       # Real-time serving setup
+│   └── streaming_inference/     # Streaming inference setup
+└── data_platform/               # Data platform infrastructure
+    ├── data_lake/               # Data lake setup
+    ├── feature_store/           # Feature store infrastructure
+    └── vector_database/         # Vector database setup
+{code}
+
+{info:title=Non-Functional Characteristics}
+* *Scalability*: Auto-scaling inference infrastructure
+* *Reliability*: High availability and disaster recovery
+* *Security*: Secure model and data access
+* *Observability*: Comprehensive monitoring and alerting
+{info}
+
+h3. 8. 📁 {{pipelines/}} - ETL & ML Pipelines
+
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Automated data processing and ML workflows
+{panel}
+
+*Structure:*
+{code:language=text}
+pipelines/
+├── etl/                         # ETL pipelines
+│   ├── ingestion/               # Data ingestion pipelines
+│   ├── transformation/          # Data transformation pipelines
+│   ├── validation/              # Data validation pipelines
+│   └── loading/                 # Data loading pipelines
+├── feature_engineering/         # Feature engineering pipelines
+│   ├── batch_features/          # Batch feature processing
+│   ├── streaming_features/      # Real-time feature processing
+│   └── feature_store/           # Feature store operations
+├── training/                    # Model training pipelines
+│   ├── data_preprocessing/      # Training data preparation
+│   ├── model_training/          # Model training workflows
+│   ├── hyperparameter_tuning/   # Automated hyperparameter tuning
+│   └── model_evaluation/        # Model evaluation pipelines
+├── inference/                   # Inference pipelines
+│   ├── batch_inference/         # Batch prediction pipelines
+│   ├── real_time_inference/     # Real-time prediction
+│   └── streaming_inference/     # Streaming inference
+├── genai/                       # GenAI-specific pipelines
+│   ├── prompt_processing/       # Prompt preprocessing
+│   ├── rag_pipeline/            # RAG system pipeline
+│   ├── fine_tuning/             # Model fine-tuning pipeline
+│   └── content_generation/      # Content generation workflows
+└── monitoring/                  # Pipeline monitoring
+    ├── data_quality/            # Data quality monitoring
+    ├── model_performance/       # Model performance tracking
+    └── drift_detection/         # Drift detection pipelines
+{code}
+
+{info:title=Non-Functional Characteristics}
+* *Automation*: Fully automated pipeline execution
+* *Scalability*: Distributed processing capabilities
+* *Reliability*: Error handling and retry mechanisms
+* *Monitoring*: Comprehensive pipeline observability
+{info}
+
+h3. 9. 📁 {{src/}} - Source Code Architecture
+
+{panel:title=Purpose|borderColor=#0052cc|bgColor=#e6f2ff}
+Core application logic with modular ML/AI design
+{panel}
+
+*Structure:*
+{code:language=text}
+src/
+├── data/                        # Data processing modules
+│   ├── extractors/              # Data extraction components
+│   ├── transformers/            # Data transformation components
+│   ├── loaders/                 # Data loading components
+│   ├── validators/              # Data validation components
+│   └── connectors/              # Database and API connectors
+├── features/                    # Feature engineering
+│   ├── feature_extractors/      # Feature extraction logic
+│   ├── feature_transformers/    # Feature transformation
+│   ├── feature_selectors/       # Feature selection algorithms
+│   └── feature_store/           # Feature store integration
+├── models/                      # Model implementations
+│   ├── traditional_ml/          # Traditional ML models
+│   ├── deep_learning/           # Deep learning models
+│   ├── nlp/                     # NLP-specific models
+│   ├── computer_vision/         # Computer vision models
+│   └── genai/                   # Generative AI models
+├── training/                    # Training infrastructure
+│   ├── trainers/                # Model training logic
+│   ├── optimizers/              # Custom optimizers
+│   ├── losses/                  # Custom loss functions
+│   └── callbacks/               # Training callbacks
+├── inference/                   # Inference infrastructure
+│   ├── predictors/              # Prediction logic
+│   ├── batch_inference/         # Batch prediction
+│   ├── real_time_serving/       # Real-time serving
+│   └── preprocessing/           # Inference preprocessing
+├── evaluation/                  # Model evaluation
+│   ├── metrics/                 # Custom metrics
+│   ├── validators/              # Model validation
+│   └── benchmarks/              # Benchmarking tools
+├── genai/                       # Generative AI components
+│   ├── llm/                     # LLM integration
+│   ├── embeddings/              # Embedding models
+│   ├── rag/                     # RAG system components
+│   ├── prompt_engineering/      # Prompt optimization
+│   └── fine_tuning/             # Fine-tuning utilities
+├── monitoring/                  # Monitoring and observability
+│   ├── model_monitoring/        # Model performance monitoring
+│   ├── data_monitoring/         # Data drift detection
+│   └── drift_detection/         # Statistical drift detection
+├── api/                         # API layer
+│   ├── model_apis/              # Model serving APIs
+│   ├── data_apis/               # Data access APIs
+│   └── admin_apis/              # Administrative APIs
+└── utils/                       # Utility functions
+    ├── io/                      # Input/output utilities
+    ├── visualization/           # Plotting and visualization
+    ├── logging/                 # Structured logging
+    └── config/                  # Configuration utilities
+{code}
+
+{info:title=Non-Functional Characteristics}
+* *Modularity*: Clear separation of ML pipeline components
+* *Scalability*: Distributed processing support
+* *Reusability*: Reusable components across projects
+* *Maintainability*: Well-structured ML code organization
+{info}
+
+h2. 🎯 ML/AI Architecture Patterns & Best Practices
+
+h3. 1. ML Pipeline Architecture Pattern
+
+{code:language=text}
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│    Data     │───→│   Feature   │───→│   Model     │───→│  Inference  │
+│ Ingestion   │    │ Engineering │    │  Training   │    │   Serving   │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+       │                  │                  │                  │
+       ▼                  ▼                  ▼                  ▼
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│    Data     │    │   Feature   │    │   Model     │    │Performance  │
+│ Validation  │    │   Store     │    │  Registry   │    │ Monitoring  │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+{code}
+
+h3. 2. GenAI/LLM Architecture Pattern
+
+{code:language=text}
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Prompt    │───→│   Context   │───→│     LLM     │───→│  Response   │
+│ Engineering │    │ Retrieval   │    │  Inference  │    │ Processing  │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+       │                  │                  │                  │
+       ▼                  ▼                  ▼                  ▼
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Template   │    │   Vector    │    │   Model     │    │   Output    │
+│  Management │    │  Database   │    │  Monitoring │    │ Validation  │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+{code}
+
+h3. 3. Real-time ML Serving Pattern
+
+{code:language=text}
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Request   │───→│ Preprocessing│───→│   Model     │───→│  Response   │
+│ Validation  │    │ & Features  │    │ Inference   │    │ Formatting  │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+       │                  │                  │                  │
+       ▼                  ▼                  ▼                  ▼
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Rate      │    │   Feature   │    │    Model    │    │   Metrics   │
+│  Limiting   │    │   Caching   │    │   Caching   │    │  Collection │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+{code}
+
+h2. 🛠️ ML/AI Implementation Best Practices
+
+h3. 1. Data Pipeline Configuration
+
+{code:language=python}
+# ✅ Good: Structured data pipeline configuration
+class DataPipelineConfig:
+    def __init__(self):
+        self.source_config = DataSourceConfig()
+        self.transformation_config = TransformationConfig()
+        self.validation_config = DataValidationConfig()
+        self.output_config = OutputConfig()
+    
+    @classmethod
+    def from_yaml(cls, config_path: str) -> 'DataPipelineConfig':
+        with open(config_path, 'r') as f:
+            config_dict = yaml.safe_load(f)
+        return cls.from_dict(config_dict)
+
+# ✅ Good: Environment-specific ML configs
+ML_CONFIG = {
+    'development': {
+        'model_registry': 'local',
+        'feature_store': 'sqlite',
+        'compute_target': 'local'
+    },
+    'production': {
+        'model_registry': 'mlflow',
+        'feature_store': 'feast',
+        'compute_target': 'kubernetes'
+    }
+}
+{code}
+
+h3. 2. Model Training Pipeline
+
+{code:language=python}
+# ✅ Good: Structured training pipeline
+class ModelTrainingPipeline:
+    def __init__(self, 
+                 data_loader: DataLoader,
+                 feature_engineer: FeatureEngineer,
+                 model_trainer: ModelTrainer,
+                 evaluator: ModelEvaluator):
+        self.data_loader = data_loader
+        self.feature_engineer = feature_engineer
+        self.model_trainer = model_trainer
+        self.evaluator = evaluator
+    
+    async def train_model(self, config: TrainingConfig) -> TrainingResult:
+        try:
+            # Data loading and validation
+            raw_data = await self.data_loader.load_training_data(config.data_config)
+            validated_data = self.validate_data(raw_data)
+            
+            # Feature engineering
+            features = await self.feature_engineer.transform(validated_data)
+            
+            # Model training
+            model = await self.model_trainer.train(features, config.model_config)
+            
+            # Model evaluation
+            metrics = await self.evaluator.evaluate(model, features)
+            
+            return TrainingResult.success(model, metrics)
+            
+        except DataValidationError as e:
+            logger.warning(f"Data validation failed: {e}")
+            return TrainingResult.data_error(str(e))
+        except ModelTrainingError as e:
+            logger.error(f"Model training failed: {e}")
+            return TrainingResult.training_error(str(e))
+{code}
+
+h2. 📋 ML/AI Implementation Checklist
+
+{expand:title=Phase 1: Data Foundation}
+* [ ] Set up data lake/warehouse infrastructure
+* [ ] Implement data ingestion pipelines
+* [ ] Create data validation and quality checks
+* [ ] Set up data versioning with DVC
+* [ ] Establish data governance policies
+{expand}
+
+{expand:title=Phase 2: Feature Engineering}
+* [ ] Design feature engineering pipelines
+* [ ] Implement feature store (Feast/Tecton)
+* [ ] Create feature validation and monitoring
+* [ ] Set up feature serving infrastructure
+* [ ] Document feature definitions and lineage
+{expand}
+
+{expand:title=Phase 3: Model Development}
+* [ ] Set up experiment tracking (MLflow/Weights & Biases)
+* [ ] Create model training pipelines
+* [ ] Implement model evaluation frameworks
+* [ ] Set up model registry and versioning
+* [ ] Create automated hyperparameter tuning
+{expand}
+
+{expand:title=Phase 4: GenAI Integration}
+* [ ] Set up LLM infrastructure (vLLM/Ollama)
+* [ ] Implement prompt engineering framework
+* [ ] Create RAG system components
+* [ ] Set up vector database (Pinecone/Weaviate)
+* [ ] Implement fine-tuning pipelines
+{expand}
+
+{expand:title=Phase 5: Model Deployment}
+* [ ] Create model serving infrastructure
+* [ ] Implement A/B testing framework
+* [ ] Set up model monitoring and alerting
+* [ ] Create automated deployment pipelines
+* [ ] Implement canary deployments
+{expand}
+
+{expand:title=Phase 6: Production Monitoring}
+* [ ] Set up data drift detection
+* [ ] Implement model performance monitoring
+* [ ] Create automated retraining triggers
+* [ ] Set up comprehensive logging and metrics
+* [ ] Implement incident response procedures
+{expand}
+
+h2. 🔍 ML/AI Quality Assurance Standards
+
+||Category||Metric||Target||
+|Data Completeness|>95%|For critical features|
+|Data Accuracy|Validated|Against source systems|
+|Data Freshness|<24 hours|For real-time features|
+|Schema Compliance|100%|Adherence to defined schemas|
+|Model Accuracy|Domain-specific|Accuracy thresholds|
+|Inference Latency|<100ms|For real-time serving|
+|Model Size|Optimized|For deployment constraints|
+|Fairness Metrics|Monitored|Bias detection and mitigation|
+|Training Pipeline|<4 hours|For full model retraining|
+|Feature Computation|<1 hour|For batch features|
+|Model Serving|99.9%|Uptime with <50ms p95 latency|
+|Data Pipeline|<2 hours|End-to-end processing|
+
+{note:title=Security & Compliance}
+* *Data Privacy*: PII detection and masking
+* *Model Security*: Adversarial attack protection
+* *Access Control*: RBAC for all ML assets
+* *Audit Trail*: Complete lineage tracking
+{note}
+
+h2. 🚀 ML/AI Scalability Considerations
+
+{panel:title=Data Scalability|borderColor=#00875a|bgColor=#e3fcef}
+* Distributed data processing (Spark/Dask)
+* Streaming data ingestion (Kafka/Pulsar)
+* Auto-scaling data pipelines
+* Efficient data storage formats (Parquet/Delta Lake)
+{panel}
+
+{panel:title=Model Scalability|borderColor=#0052cc|bgColor=#e6f2ff}
+* Model parallelism and distributed training
+* Efficient model serving (TensorRT/ONNX)
+* Model quantization and compression
+* Dynamic batching for inference
+{panel}
+
+{panel:title=Infrastructure Scalability|borderColor=#974801|bgColor=#fff4e6}
+* Kubernetes-based ML platforms
+* Auto-scaling compute resources
+* GPU/TPU resource management
+* Multi-cloud deployment strategies
+{panel}
+
+h2. 📚 Related Documentation
+
+* [MLOps Architecture Guide|./docs/ops/MLOPS_ARCHITECTURE.md]
+* [Data Pipeline Best Practices|./docs/pipelines/DATA_PIPELINE_GUIDE.md]
+* [Model Deployment Guide|./docs/ops/MODEL_DEPLOYMENT.md]
+* [GenAI Integration Guide|./docs/genai/GENAI_INTEGRATION.md]
+* [Feature Store Setup|./docs/features/FEATURE_STORE_SETUP.md]
+
+h2. 🎯 ML/AI Success Metrics
+
+{color:#0052cc}*Data Team Productivity*{color}
+||Metric||Target||Description||
+|Data Pipeline Development|<1 week|For new data sources|
+|Feature Development|<3 days|For new features|
+|Data Quality Issues|<5%|Of pipelines per month|
+|Data Discovery|<15 minutes|To find relevant datasets|
+
+{color:#00875a}*ML Team Velocity*{color}
+||Metric||Target||Description||
+|Experiment Cycle|<1 day|For hypothesis testing|
+|Model Training|<24 hours|For production models|
+|Model Deployment|<4 hours|From approval to production|
+|A/B Test Setup|<2 hours|For new experiments|
+
+{color:#974801}*System Reliability*{color}
+||Metric||Target||Description||
+|Model Uptime|99.9%|Availability|
+|Prediction Accuracy|Within 5%|Of baseline|
+|Data Freshness|95%|Of data updated within SLA|
+|Pipeline Success Rate|>98%|Successful runs|
+
+{color:#403294}*Business Impact*{color}
+||Metric||Target||Description||
+|Model Performance|Measurable|Business KPI improvement|
+|Deployment Frequency|Weekly|Model updates|
+|Time to Value|<2 weeks|From idea to production|
+|Cost Efficiency|Optimized|Compute and storage costs|
+
+{success:title=Conclusion}
+This structure provides a comprehensive foundation for building production-ready ETL, GenAI, and ML systems that are scalable, maintainable, and aligned with MLOps best practices. The modular architecture supports the full ML lifecycle from data ingestion to model deployment and monitoring.
+{success}
