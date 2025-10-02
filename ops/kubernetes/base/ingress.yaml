@@ -26,6 +26,7 @@ spec:
                 name: api-service
                 port:
                   number: 8000
+                  number: 80
           - path: /mcp/postgres
             pathType: Prefix
             backend:
