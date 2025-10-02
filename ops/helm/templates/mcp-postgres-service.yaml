@@ -1,0 +1,19 @@
+{{- if .Values.mcpPostgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "agentic-ai-customer-support.fullname" . }}-mcp-postgres
+  labels:
+    {{- include "agentic-ai-customer-support.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-postgres
+spec:
+  type: {{ .Values.mcpPostgres.service.type }}
+  ports:
+  - port: {{ .Values.mcpPostgres.service.port }}
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "agentic-ai-customer-support.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-postgres
+{{- end }}

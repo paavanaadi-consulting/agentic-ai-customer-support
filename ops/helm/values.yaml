@@ -230,3 +230,48 @@ cloudProvider:
     storageClass: "ssd"
     loadBalancerType: "External"
     annotations: {}
+
+# Service Account
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # Whether auto mount API credentials for a service account
+  automount: true
+
+# Secrets (should be provided via external secret management in production)
+secrets:
+  claudeApiKey: ""  # Set via --set or external secrets
+  openaiApiKey: ""  # Set via --set or external secrets
+  geminiApiKey: ""  # Set via --set or external secrets
+  jwtSecret: ""     # Will be auto-generated if not provided
+
+# External database configuration (when postgresql.enabled: false)
+externalDatabase:
+  host: ""
+  port: 5432
+  database: "customer_support"
+  username: "agenticai"
+  password: ""
+  url: ""
+
+# External Kafka configuration (when kafka.enabled: false)
+externalKafka:
+  bootstrapServers: ""
+
+# External Qdrant configuration (when qdrant.enabled: false)
+externalQdrant:
+  url: ""
+
+# Name overrides
+nameOverride: ""
+fullnameOverride: ""
+
+# Node scheduling
+nodeSelector: {}
+tolerations: []
+affinity: {}

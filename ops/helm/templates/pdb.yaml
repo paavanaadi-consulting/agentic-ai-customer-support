@@ -1,0 +1,41 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "agentic-ai-customer-support.fullname" . }}-api
+  labels:
+    {{- include "agentic-ai-customer-support.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  {{- if .Values.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "agentic-ai-customer-support.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+---
+{{- if .Values.consumer.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "agentic-ai-customer-support.fullname" . }}-consumer
+  labels:
+    {{- include "agentic-ai-customer-support.labels" . | nindent 4 }}
+    app.kubernetes.io/component: consumer
+spec:
+  {{- if .Values.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "agentic-ai-customer-support.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: consumer
+{{- end }}
+{{- end }}

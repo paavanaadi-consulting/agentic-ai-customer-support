@@ -8,7 +8,7 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - secrets.yaml
-  - postgres.yaml
+  - postgres.yamlresourc
   - kafka.yaml
   - qdrant.yaml
   - api-deployment.yaml

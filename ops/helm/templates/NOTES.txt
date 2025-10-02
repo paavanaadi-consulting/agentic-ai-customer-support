@@ -1,0 +1,54 @@
+1. Get the application URL by running these commands:
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else if contains "NodePort" .Values.api.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "agentic-ai-customer-support.fullname" . }}-api)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.api.service.type }}
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "agentic-ai-customer-support.fullname" . }}-api'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "agentic-ai-customer-support.fullname" . }}-api --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.api.service.port }}
+{{- else if contains "ClusterIP" .Values.api.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "agentic-ai-customer-support.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}
+
+2. Check the deployment status:
+  kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }} -n {{ .Release.Namespace }}
+
+3. Get service status:
+  kubectl get svc -l app.kubernetes.io/instance={{ .Release.Name }} -n {{ .Release.Namespace }}
+
+4. View logs:
+  kubectl logs -l app.kubernetes.io/name={{ include "agentic-ai-customer-support.name" . }} -n {{ .Release.Namespace }}
+
+5. Health check:
+{{- if .Values.ingress.enabled }}
+  curl -H "Host: {{ (index .Values.ingress.hosts 0).host }}" http://{{ (index .Values.ingress.hosts 0).host }}/health
+{{- else }}
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "agentic-ai-customer-support.fullname" . }}-api 8000:8000 &
+  curl http://localhost:8000/health
+{{- end }}
+
+{{- if .Values.postgresql.enabled }}
+
+6. Connect to PostgreSQL:
+  export POSTGRES_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "agentic-ai-customer-support.fullname" . }}-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
+  kubectl run {{ include "agentic-ai-customer-support.fullname" . }}-postgresql-client --rm --tty -i --restart='Never' --namespace {{ .Release.Namespace }} --image docker.io/bitnami/postgresql:15 --env="PGPASSWORD=$POSTGRES_PASSWORD" \
+    --command -- psql --host {{ include "agentic-ai-customer-support.fullname" . }}-postgresql --username {{ .Values.postgresql.auth.username }} --dbname {{ .Values.postgresql.auth.database }} --port 5432
+{{- end }}
+
+{{- if .Values.kafka.enabled }}
+
+7. Connect to Kafka:
+  kubectl run {{ include "agentic-ai-customer-support.fullname" . }}-kafka-client --restart='Never' --image docker.io/bitnami/kafka:3.5.1-debian-11-r1 --namespace {{ .Release.Namespace }} --command -- sleep infinity
+  kubectl exec --tty -i {{ include "agentic-ai-customer-support.fullname" . }}-kafka-client --namespace {{ .Release.Namespace }} -- bash
+{{- end }}

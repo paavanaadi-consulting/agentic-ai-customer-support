@@ -97,56 +97,69 @@ Qdrant service name
 {{- end }}
 
 {{/*
+Generate database connection string
+*/}}
+{{- define "agentic-ai-customer-support.databaseUrl" -}}
+{{- if .Values.postgresql.enabled }}
+postgresql://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ include "agentic-ai-customer-support.fullname" . }}-postgresql:5432/{{ .Values.postgresql.auth.database }}
+{{- else }}
+{{- .Values.externalDatabase.url }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate Kafka bootstrap servers
+*/}}
+{{- define "agentic-ai-customer-support.kafkaBootstrapServers" -}}
+{{- if .Values.kafka.enabled }}
+{{ include "agentic-ai-customer-support.fullname" . }}-kafka:9092
+{{- else }}
+{{- .Values.externalKafka.bootstrapServers }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate Qdrant URL
+*/}}
+{{- define "agentic-ai-customer-support.qdrantUrl" -}}
+{{- if .Values.qdrant.enabled }}
+http://{{ include "agentic-ai-customer-support.fullname" . }}-qdrant:6333
+{{- else }}
+{{- .Values.externalQdrant.url }}
+{{- end }}
+{{- end }}
+
+{{/*
 Common environment variables
 */}}
 {{- define "agentic-ai-customer-support.commonEnv" -}}
-- name: NAMESPACE
-  valueFrom:
-    fieldRef:
-      fieldPath: metadata.namespace
-- name: POD_NAME
-  valueFrom:
-    fieldRef:
-      fieldPath: metadata.name
-- name: POD_IP
-  valueFrom:
-    fieldRef:
-      fieldPath: status.podIP
-{{- end }}
-
-{{/*
-Database connection environment variables
-*/}}
-{{- define "agentic-ai-customer-support.dbEnv" -}}
-- name: POSTGRES_HOST
-  value: {{ include "agentic-ai-customer-support.fullname" . }}-postgresql
-- name: POSTGRES_PORT
-  value: "5432"
-- name: POSTGRES_DB
-  value: {{ .Values.postgresql.auth.database }}
-- name: POSTGRES_USER
-  value: {{ .Values.postgresql.auth.username }}
-- name: POSTGRES_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ include "agentic-ai-customer-support.fullname" . }}-postgresql
-      key: password
-{{- end }}
-
-{{/*
-Kafka connection environment variables
-*/}}
-{{- define "agentic-ai-customer-support.kafkaEnv" -}}
+- name: DATABASE_URL
+  value: {{ include "agentic-ai-customer-support.databaseUrl" . | quote }}
 - name: KAFKA_BOOTSTRAP_SERVERS
-  value: {{ include "agentic-ai-customer-support.fullname" . }}-kafka:9092
+  value: {{ include "agentic-ai-customer-support.kafkaBootstrapServers" . | quote }}
+- name: QDRANT_URL
+  value: {{ include "agentic-ai-customer-support.qdrantUrl" . | quote }}
+- name: LOG_LEVEL
+  value: {{ .Values.api.env.LOG_LEVEL | quote }}
+- name: RELEASE_NAME
+  value: {{ .Release.Name | quote }}
+- name: RELEASE_NAMESPACE
+  value: {{ .Release.Namespace | quote }}
 {{- end }}
 
 {{/*
-Qdrant connection environment variables
+Generate storage class
 */}}
-{{- define "agentic-ai-customer-support.qdrantEnv" -}}
-- name: QDRANT_HOST
-  value: {{ include "agentic-ai-customer-support.qdrant.fullname" . }}
-- name: QDRANT_PORT
-  value: "6333"
+{{- define "agentic-ai-customer-support.storageClass" -}}
+{{- if .Values.global.storageClass }}
+{{- .Values.global.storageClass }}
+{{- else if .Values.cloudProvider.aws.enabled }}
+{{- .Values.cloudProvider.aws.storageClass }}
+{{- else if .Values.cloudProvider.azure.enabled }}
+{{- .Values.cloudProvider.azure.storageClass }}
+{{- else if .Values.cloudProvider.gcp.enabled }}
+{{- .Values.cloudProvider.gcp.storageClass }}
+{{- else }}
+standard
+{{- end }}
 {{- end }}
