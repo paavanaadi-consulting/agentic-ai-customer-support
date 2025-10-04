@@ -579,6 +579,16 @@ INSERT INTO agent_performance (agent_id, agent_type, generation, fitness_score, 
 -- COMPLETION MESSAGE
 -- =====================================================
 
--- Log successful initialization
-INSERT INTO customer_feedback (feedback_id, customer_id, feedback_type, rating, comment, tags) VALUES
-('INIT_SUCCESS', 'SYSTEM', 'system', 5, 'Database schema and sample data initialized successfully. All tables, indexes, triggers, and views created. Sample data inserted for testing and demonstration purposes.', ARRAY['initialization', 'success', 'schema', 'sample-data']);
+-- Log successful initialization (commented out due to foreign key constraint)
+-- INSERT INTO customer_feedback (feedback_id, customer_id, feedback_type, rating, comment, tags) VALUES
+-- ('INIT_SUCCESS', 'SYSTEM', 'system', 5, 'Database schema and sample data initialized successfully. All tables, indexes, triggers, and views created. Sample data inserted for testing and demonstration purposes.', ARRAY['initialization', 'success', 'schema', 'sample-data']);
+
+-- Create a system status log instead
+DO $$
+BEGIN
+    RAISE NOTICE 'Database initialization completed successfully!';
+    RAISE NOTICE 'Tables created: %, Indexes created: %, Views created: %', 
+        (SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'),
+        (SELECT count(*) FROM pg_indexes WHERE schemaname = 'public'),
+        (SELECT count(*) FROM information_schema.views WHERE table_schema = 'public');
+END $$;

@@ -115,8 +115,8 @@ class OptimizedPostgreSQLMCPClient(MCPClientInterface):
                 if self.http_session is None or self.http_session.closed:
                     self.http_session = aiohttp.ClientSession()
         
-        # Test connection with a simple health check
-        await self._http_call_tool("list_tables", {"schema": "public"})
+        # Test connection with a simple health check using list_schemas
+        await self._http_call_tool("list_schemas", {})
     
     async def disconnect(self):
         """Disconnect from all connections."""
@@ -221,13 +221,31 @@ class OptimizedPostgreSQLMCPClient(MCPClientInterface):
         if not self.http_session:
             raise MCPClientError("HTTP session not available")
         
+        # Map internal tool names to official MCP server tool names
+        tool_mapping = {
+            'query': 'execute_sql',
+            'execute': 'execute_sql', 
+            'list_tables': 'list_objects',
+            'describe_table': 'get_object_details',
+            'list_schemas': 'list_schemas',
+            'explain_query': 'explain_query',
+            'get_top_queries': 'get_top_queries',
+            'analyze_db_health': 'analyze_db_health'
+        }
+        
+        # Convert tool name to official server tool name
+        official_tool_name = tool_mapping.get(tool_name, tool_name)
+        
+        # Transform arguments based on tool type
+        transformed_args = self._transform_arguments(tool_name, arguments)
+        
         payload = {
             "method": "tools/call",
             "params": {
-                "name": tool_name,
-                "arguments": arguments
+                "name": official_tool_name,
+                "arguments": transformed_args
             },
-            "id": f"{tool_name}-{int(time.time())}"
+            "id": f"{official_tool_name}-{int(time.time())}"
         }
         
         try:
@@ -240,12 +258,113 @@ class OptimizedPostgreSQLMCPClient(MCPClientInterface):
                     result = await response.json()
                     if result.get('error'):
                         raise MCPClientError(f"MCP tool error: {result['error']}")
-                    return result.get('result', {})
+                    
+                    # Transform the response to our expected format
+                    return self._transform_response(tool_name, result.get('result', {}))
                 else:
                     error_text = await response.text()
                     raise MCPClientError(f"HTTP {response.status}: {error_text}")
         except aiohttp.ClientError as e:
             raise MCPClientError(f"Network error: {e}")
+    
+    def _transform_response(self, internal_tool_name: str, response: Any) -> Dict[str, Any]:
+        """Transform official MCP server response to our expected format."""
+        
+        def serialize_datetime(obj):
+            """Helper to serialize datetime objects to ISO format strings."""
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            elif isinstance(obj, dict):
+                return {key: serialize_datetime(value) for key, value in obj.items()}
+            elif isinstance(obj, list):
+                return [serialize_datetime(item) for item in obj]
+            else:
+                return obj
+        
+        # Apply datetime serialization to the response
+        response = serialize_datetime(response)
+        
+        if internal_tool_name in ['query', 'execute']:
+            # For SQL execution, the official server returns data directly
+            if isinstance(response, list):
+                return {'success': True, 'data': response}
+            elif isinstance(response, dict):
+                return {'success': True, 'data': [response]}
+            else:
+                return {'success': True, 'data': []}
+        
+        elif internal_tool_name == 'list_tables':
+            # Transform list_objects response to our expected format
+            if isinstance(response, list):
+                tables = [obj.get('name', '') for obj in response if obj.get('type') == 'BASE TABLE']
+                return {'success': True, 'tables': tables}
+            else:
+                return {'success': True, 'tables': []}
+        
+        elif internal_tool_name == 'describe_table':
+            # Transform get_object_details response to our expected format
+            if isinstance(response, dict):
+                return {'success': True, 'description': response}
+            else:
+                return {'success': True, 'description': {}}
+        
+        # For other responses, wrap in success format
+        return {'success': True, 'data': response}
+    
+    def _transform_arguments(self, internal_tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Transform arguments to match official MCP server expectations."""
+        if internal_tool_name in ['query', 'execute']:
+            # For SQL execution, convert parameterized queries to inline SQL
+            query = arguments.get('query', '')
+            params = arguments.get('params', [])
+            
+            if params:
+                # Simple parameter substitution - inline parameters into SQL
+                # Note: This is basic and may need enhancement for complex cases
+                try:
+                    # Replace $1, $2, etc. with actual parameter values
+                    for i, param in enumerate(params, 1):
+                        if isinstance(param, str):
+                            # Escape single quotes in strings
+                            escaped_param = param.replace("'", "''")
+                            query = query.replace(f"${i}", f"'{escaped_param}'")
+                        elif isinstance(param, (int, float)):
+                            query = query.replace(f"${i}", str(param))
+                        elif isinstance(param, datetime):
+                            # Handle datetime objects by converting to ISO format
+                            iso_time = param.isoformat()
+                            query = query.replace(f"${i}", f"'{iso_time}'")
+                        elif param is None:
+                            query = query.replace(f"${i}", "NULL")
+                        else:
+                            # For other types, convert to string and quote
+                            escaped_param = str(param).replace("'", "''")
+                            query = query.replace(f"${i}", f"'{escaped_param}'")
+                except Exception as e:
+                    self.logger.warning(f"Parameter substitution failed: {e}, using query as-is")
+            
+            return {'sql': query}
+        
+        elif internal_tool_name == 'list_tables':
+            # Transform list_tables to list_objects
+            schema = arguments.get('schema', 'public')
+            return {
+                'schema_name': schema,
+                'object_type': 'table'
+            }
+        
+        elif internal_tool_name == 'describe_table':
+            # Transform describe_table to get_object_details
+            table_name = arguments.get('table_name', '')
+            schema = arguments.get('schema', 'public')
+            return {
+                'schema_name': schema,
+                'object_name': table_name,
+                'object_type': 'table'
+            }
+        
+        # For other tools, pass arguments through as-is
+        return arguments
     
     async def _handle_custom_operation(self, operation: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Handle custom customer support operations."""

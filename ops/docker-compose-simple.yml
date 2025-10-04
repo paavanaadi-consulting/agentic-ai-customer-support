@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=customer_support
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d customer_support"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - agentic_network
+
+  # Official PostgreSQL MCP Server (crystaldba/postgres-mcp)
+  mcp-postgres:
+    build:
+      context: ./mcp-postgres-official
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=customer_support
+      - MCP_PORT=8001
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - agentic_network
+
+  # API Service with MCP Integration
+  api-service:
+    build:
+      context: ..
+      dockerfile: ops/api/Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=customer_support
+      - DB_USER=admin
+      - DB_PASSWORD=password
+      - MCP_POSTGRES_URL=http://mcp-postgres:8001
+      - MCP_SERVER_URL=http://mcp-postgres:8001
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mcp-postgres:
+        condition: service_started
+    volumes:
+      - ../logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - agentic_network
+
+  # Agents Service (Consumer Service) - Disabled for testing
+  # agents:
+  #   build:
+  #     context: ..
+  #     dockerfile: ops/agents/Dockerfile
+  #   environment:
+  #     - DB_HOST=postgres
+  #     - DB_PORT=5432
+  #     - DB_USER=admin
+  #     - DB_PASSWORD=password
+  #     - DB_NAME=customer_support
+  #     - LOG_LEVEL=INFO
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ../logs:/app/logs
+  #   restart: unless-stopped
+  #   networks:
+  #     - agentic_network
+
+networks:
+  agentic_network:
+    driver: bridge
+
+volumes:
+  pgdata:
