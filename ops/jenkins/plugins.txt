@@ -1,0 +1,17 @@
+blueocean
+build-timeout
+credentials-binding
+docker-pipeline
+docker-workflow
+git
+github
+pipeline-github-lib
+pipeline-stage-view
+timestamper
+ws-cleanup
+configuration-as-code
+kubernetes
+prometheus
+workflow-aggregator
+workflow-cps
+workflow-job

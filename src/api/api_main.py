@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 import time
 
 from config.env_settings import CONFIG
@@ -31,6 +31,11 @@ logger = logging.getLogger(__name__)
 
 # Global service instances
 service_factory = None
+
+# Metrics tracking
+request_count = {}
+request_duration = {}
+error_count = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -114,6 +119,37 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = str(process_time)
     return response
 
+# Metrics middleware
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    """Middleware to track metrics for Prometheus"""
+    start_time = time.time()
+    
+    response = await call_next(request)
+    
+    # Track metrics
+    path = request.url.path
+    method = request.method
+    status_code = response.status_code
+    
+    # Request count
+    key = f"{method}_{path}_{status_code}"
+    request_count[key] = request_count.get(key, 0) + 1
+    
+    # Request duration
+    duration = time.time() - start_time
+    duration_key = f"{method}_{path}"
+    if duration_key not in request_duration:
+        request_duration[duration_key] = []
+    request_duration[duration_key].append(duration)
+    
+    # Error count
+    if status_code >= 400:
+        error_key = f"{method}_{path}"
+        error_count[error_key] = error_count.get(error_key, 0) + 1
+    
+    return response
+
 # Exception handlers
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
@@ -165,6 +201,48 @@ async def health_check():
                 "error": str(e)
             }
         )
+
+# Metrics endpoint
+@app.get("/metrics", response_class=PlainTextResponse)
+async def metrics():
+    """Prometheus metrics endpoint"""
+    lines = []
+    
+    # Request count metrics
+    lines.append("# HELP http_requests_total Total number of HTTP requests")
+    lines.append("# TYPE http_requests_total counter")
+    for key, count in request_count.items():
+        method, path, status = key.split('_', 2)
+        lines.append(f'http_requests_total{{method="{method}",path="{path}",status="{status}"}} {count}')
+    
+    # Request duration metrics
+    lines.append("# HELP http_request_duration_seconds HTTP request duration in seconds")
+    lines.append("# TYPE http_request_duration_seconds histogram")
+    for key, durations in request_duration.items():
+        method, path = key.split('_', 1)
+        if durations:
+            avg_duration = sum(durations) / len(durations)
+            lines.append(f'http_request_duration_seconds{{method="{method}",path="{path}"}} {avg_duration}')
+    
+    # Error count metrics
+    lines.append("# HELP http_errors_total Total number of HTTP errors")
+    lines.append("# TYPE http_errors_total counter")
+    for key, count in error_count.items():
+        method, path = key.split('_', 1)
+        lines.append(f'http_errors_total{{method="{method}",path="{path}"}} {count}')
+    
+    # Service health metric
+    lines.append("# HELP service_up Service availability")
+    lines.append("# TYPE service_up gauge")
+    try:
+        if service_factory and service_factory.customer_service:
+            lines.append('service_up{service="api"} 1')
+        else:
+            lines.append('service_up{service="api"} 0')
+    except:
+        lines.append('service_up{service="api"} 0')
+    
+    return "\n".join(lines)
 
 # Include routers
 app.include_router(api_router, prefix="/api/v1", tags=["api"])
